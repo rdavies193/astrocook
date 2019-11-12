@@ -53,7 +53,10 @@ class GUIMenu(object):
         menu.Append(item)
 
     def _on_dialog(self, event, title, attr):
-        dlg = GUIDialogMethod(self._gui, title, attr)
+        if isinstance(attr, list):
+            dlg = GUIDialogMethods(self._gui, title, attr)
+        else:
+            dlg = GUIDialogMethod(self._gui, title, attr)
 
     def _on_graph(self, event, key, item):
         sel = self._gui._graph_main._sel
@@ -200,7 +203,7 @@ class GUIMenuCook(GUIMenu):
             #                             dz=5e-5, z_end=zem, maxfev=10)
             #sess_reg.add_syst_from_lines(series='MgII', logN=None, b=20.0,
             #                             dz=5e-5, z_end=zem, maxfev=10)
- 
+
             sess_reg.add_syst_from_resids(chi2r_thres=1.0, logN=13.0, b=2.0,
                                           maxfev=10)
             """
