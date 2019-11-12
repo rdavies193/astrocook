@@ -53,10 +53,7 @@ class GUIMenu(object):
         menu.Append(item)
 
     def _on_dialog(self, event, title, attr):
-        if isinstance(attr, list):
-            dlg = GUIDialogMethods(self._gui, title, attr)
-        else:
-            dlg = GUIDialogMethod(self._gui, title, attr)
+        dlg = GUIDialogMethod(self._gui, title, attr)
 
     def _on_graph(self, event, key, item):
         sel = self._gui._graph_main._sel
@@ -85,7 +82,7 @@ class GUIMenuCook(GUIMenu):
 
 
     def _on_civ_full(self, event):
-        targ_list = ascii.read('/data/cupani/CIV/targets_3.csv')
+        targ_list = ascii.read('/data/cupani/CIV/targets_prova.csv')
 
         for l in targ_list:
             time_start = datetime.datetime.now()
@@ -103,7 +100,7 @@ class GUIMenuCook(GUIMenu):
 
             sess.convolve_gauss(std=10)
             sess.find_peaks(kappa=3.0)
-            sess.lines._t.remove_rows(sess.lines.y == 0)
+            #sess.lines._t.remove_rows(sess.lines.y == 0)
             if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
                 sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
             if 'cont' not in sess.spec._t.colnames:
@@ -161,25 +158,31 @@ class GUIMenuCook(GUIMenu):
             #xmax = 630
             #xmin = 480
             #xmax = 490
-            self._gui._panel_sess._on_open('/data/cupani/CIV/reduced/'+t\
+            #xmin = 550
+            #xmax = 650
+            #self._gui._panel_sess._on_open('/data/cupani/CIV/reduced/'+t\
+            #                               +'.fits')
+            self._gui._panel_sess._on_open('/data/cupani/CIV/other/'+t\
                                            +'.fits')
             sess_start = self._gui._sess_sel
             if sess_start.spec.meta['object'] == 'J2123-0050':
                 sess = sess_start.extract_region(xmin=xmin, xmax=xmax)
             else:
                 sess = sess_start
-
             sess.convolve_gauss(std=10)
             sess.find_peaks(kappa=3.0)
-            sess.lines._t.remove_rows(sess.lines.y == 0)
-            if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
-                sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
+            #sess.lines._t.remove_rows(sess.lines.y == 0)
+            #if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
+            #    sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
             if 'cont' not in sess.spec._t.colnames:
                 sess.extract_nodes(delta_x=1000)
                 sess.interp_nodes()
 
             sess_reg = sess.extract_region(xmin=xmin, xmax=xmax)
             self._gui._panel_sess._on_add(sess_reg, open=False)
+            if sess_reg.spec.meta['object'] == 'SDSSJ2310p1855':
+                sess_reg.extract_nodes(delta_x=1000)
+                sess_reg.interp_nodes()
             #"""
             sess_center = dc(sess_reg)
             sess_center.add_syst_from_lines(z_end=20, maxfev=10)#series='unknown')
@@ -197,7 +200,7 @@ class GUIMenuCook(GUIMenu):
             #                             dz=5e-5, z_end=zem, maxfev=10)
             #sess_reg.add_syst_from_lines(series='MgII', logN=None, b=20.0,
             #                             dz=5e-5, z_end=zem, maxfev=10)
-
+ 
             sess_reg.add_syst_from_resids(chi2r_thres=1.0, logN=13.0, b=2.0,
                                           maxfev=10)
             """
