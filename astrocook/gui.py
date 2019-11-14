@@ -3,6 +3,8 @@ from .gui_graph import *
 from .gui_image import *
 from .gui_menu import *
 from .gui_table import *
+from astropy import table as at
+from copy import deepcopy as dc
 import numpy as np
 from sphinx.util import docstrings as ds
 import wx
@@ -25,6 +27,12 @@ class GUI(object):
         print("Cupani et al. 2017-2019 * INAF-OATs")
         self._sess_list = []
         self._sess_sel = None
+        self._sess_item_sel = []
+        self._menu_spec_id = []
+        self._menu_lines_id = []
+        self._menu_nodes_id = []
+        self._menu_systs_id = []
+        self._menu_mods_id = []
         self._panel_sess = GUIPanelSession(self)
         GUIGraphMain(self)
         GUITableSpectrum(self)
@@ -53,7 +61,21 @@ class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
         wx.ListCtrl.__init__(self, parent, ID, pos, size, style)
         listmix.TextEditMixin.__init__(self)
 
-    def insert_string_item(self, *args):
+    def _get_selected_items(self):
+        sel = []
+
+        # start at -1 to get the first selected item
+        current = -1
+        while True:
+            next = self.GetNextItem(current, wx.LIST_NEXT_ALL,
+                                    wx.LIST_STATE_SELECTED)
+            if next == -1:
+                return sel
+
+            sel.append(next)
+            current = next
+
+    def _insert_string_item(self, *args):
         self.InsertItem(*args)
         listmix.TextEditMixin.__init__(self)
 
@@ -102,7 +124,7 @@ class GUIPanelSession(wx.Frame):
         self._sel = self._tab.GetItemCount()
         self._items = [self._sel]
 
-        self._tab.insert_string_item(self._sel, "%s (%s)"
+        self._tab._insert_string_item(self._sel, "%s (%s)"
                                      % (sess.name, str(self._sel)))
         self._gui._sess_list.append(sess)
 
@@ -114,6 +136,7 @@ class GUIPanelSession(wx.Frame):
             self._gui._sess_sel.open()
         x = sess.spec._safe(sess.spec.x)#.value
         self._refresh()
+        self._menu._refresh()
         self._gui._graph_main._refresh(self._gui._sess_items)
         #print(self._gui._sess_sel.__dict__)
 
@@ -145,6 +168,11 @@ class GUIPanelSession(wx.Frame):
     def _on_select(self, event):
         self._sel = event.GetIndex()
         self._gui._sess_sel = self._gui._sess_list[self._sel]
+        self._gui._sess_item_sel = self._tab._get_selected_items()
+
+        # Enable session combine depending on how many sessions are selected
+        file = self._menu._file
+        file._menu.Enable(file._start_id+101, len(self._gui._sess_item_sel)>1)
 
         item = self._tab.GetFirstSelected()
         self._items = []
@@ -153,6 +181,7 @@ class GUIPanelSession(wx.Frame):
             item = self._tab.GetNextSelected(item)
         self._gui._sess_items = [self._gui._sess_list[i] for i in self._items]
         self._refresh()
+        self._menu._refresh()
         self._gui._graph_main._refresh(self._gui._sess_items)
 
     def _on_veto(self, event):
@@ -184,3 +213,28 @@ class GUIPanelSession(wx.Frame):
                 self._tab.SetItem(i, 6, str(len(x)))
             except:
                 pass
+
+    def combine(self, name='*_combined'):
+        """ @brief Combine two or more sessions
+        @details When sessions are combined, a new session is created, with a
+        new spectrum containing all entries from the spectra of the combined
+        sessions. Other objects from the sessions (line lists, etc.) are
+        discarded.
+        @param name Name of the output session
+        @return Combined session
+        """
+        name_in = name
+        #sel = self._tab._get_selected_items()
+        sel = self._gui._sess_item_sel
+        spec = dc(self._gui._sess_list[sel[0]].spec)
+        if name_in[0] == '*':
+            name = self._gui._sess_list[sel[0]].name
+        for s in sel[1:]:
+            spec._t = at.vstack([spec._t, self._gui._sess_list[s].spec._t])
+            if name_in[0] == '*':
+                name += '_' + self._gui._sess_list[s].name
+        if name_in[0] == '*':
+            name += name_in[1:]
+        sess = Session(name=name, spec=spec)
+
+        return sess
