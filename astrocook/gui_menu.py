@@ -229,7 +229,7 @@ class GUIMenuCook(GUIMenu):
             #                             dz=5e-5, z_end=zem, maxfev=10)
             #sess_reg.add_syst_from_lines(series='MgII', logN=None, b=20.0,
             #                             dz=5e-5, z_end=zem, maxfev=10)
- 
+
             sess_reg.add_syst_from_resids(chi2r_thres=1.0, logN=13.0, b=2.0,
                                           maxfev=10)
             """
