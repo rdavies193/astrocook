@@ -66,16 +66,11 @@ class GUIMenu(object):
         else:
             item.Enable(enable)
 
-<<<<<<< HEAD
-    def _on_dialog(self, event, title, attr):
-        dlg = GUIDialogMethod(self._gui, title, attr)
-=======
     def _on_dialog(self, event, title, attr, obj=None):
         if isinstance(attr, list):
             dlg = GUIDialogMethods(self._gui, title, attr, obj)
         else:
             dlg = GUIDialogMethod(self._gui, title, attr, obj)
->>>>>>> develop
 
     def _on_graph(self, event, key, item):
         sel = self._gui._graph_main._sel
@@ -109,10 +104,10 @@ class GUIMenuCook(GUIMenu):
         self._menu = wx.Menu()
 
         # Add items to Cook menu here
-        self._item(self._menu, start_id+1, 'spec',
+        self._item(self._menu, start_id+1, None,
                    "Fit CIV forest in all QSOs...",
                    self._on_civ_full)
-        self._item(self._menu, start_id+2, 'spec', "Test...", self._on_test)
+        self._item(self._menu, start_id+2, None, "Test...", self._on_test)
 
 
     def _on_civ_full(self, event):
@@ -134,7 +129,7 @@ class GUIMenuCook(GUIMenu):
 
             sess.convolve_gauss(std=10)
             sess.find_peaks(kappa=3.0)
-            #sess.lines._t.remove_rows(sess.lines.y == 0)
+            sess.lines._t.remove_rows(sess.lines.y == 0)
             if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
                 sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
             if 'cont' not in sess.spec._t.colnames:
@@ -194,10 +189,10 @@ class GUIMenuCook(GUIMenu):
             #xmax = 490
             #xmin = 550
             #xmax = 650
-            #self._gui._panel_sess._on_open('/data/cupani/CIV/reduced/'+t\
-            #                               +'.fits')
-            self._gui._panel_sess._on_open('/data/cupani/CIV/other/'+t\
+            self._gui._panel_sess._on_open('/data/cupani/CIV/reduced/'+t\
                                            +'.fits')
+            #self._gui._panel_sess._on_open('/data/cupani/CIV/other/'+t\
+            #                               +'.fits')
             sess_start = self._gui._sess_sel
             if sess_start.spec.meta['object'] == 'J2123-0050':
                 sess = sess_start.extract_region(xmin=xmin, xmax=xmax)
@@ -205,9 +200,9 @@ class GUIMenuCook(GUIMenu):
                 sess = sess_start
             sess.convolve_gauss(std=10)
             sess.find_peaks(kappa=3.0)
-            #sess.lines._t.remove_rows(sess.lines.y == 0)
-            #if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
-            #    sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
+            sess.lines._t.remove_rows(sess.lines.y == 0)
+            if np.mean(sess.spec._t['y'])<1 and np.std(sess.spec._t['y'])<1:
+                sess.spec._t['cont'] = [1] * len(sess.spec._t)*sess.spec.y.unit
             if 'cont' not in sess.spec._t.colnames:
                 sess.extract_nodes(delta_x=1000)
                 sess.interp_nodes()
