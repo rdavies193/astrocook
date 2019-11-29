@@ -117,6 +117,7 @@ class GUIDialog(wx.Dialog):
                     self._gui._refresh()
                 else:
                     self._gui._panel_sess._on_add(out, open=False)
+                    self._obj = self._gui._sess_sel.cb
                 self.Close()
 
     def _update_params(self):

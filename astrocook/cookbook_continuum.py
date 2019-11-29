@@ -1,4 +1,5 @@
 from astropy import units as au
+from copy import deepcopy as dc
 from .message import *
 
 class CookbookContinuum(object):
@@ -45,7 +46,8 @@ class CookbookContinuum(object):
         return 0
 
 
-    def peaks_find(self, col='conv', kind='min', kappa=5.0, append=True):
+    def peaks_find(self, col='conv', kind='min', kappa=5.0, append=True,
+                   new_sess=False):
         """ @brief Find peaks
         @details Find the peaks in a spectrum column. Peaks are the extrema
         (minima or maxima) that are more prominent than a given number of
@@ -54,17 +56,21 @@ class CookbookContinuum(object):
         @param kind Kind of extrema ('min' or 'max')
         @param kappa Number of standard deviations
         @param append Append peaks to existing line list
+        @param new_sess Create a new session
         @return 0
         """
 
         try:
             kappa = float(kappa)
-            append = append == 'True'
+            append = append or append == 'True'
+            new_sess = new_sess or new_sess == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
 
-        spec = self.sess.spec
+        sess = dc(self.sess) if new_sess else self.sess
+        spec = sess.spec
+
         if col not in spec.t.colnames:
             logging.error("The spectrum has not a column named '%s'. Please "\
                           "pick another one." % col)
@@ -76,12 +82,16 @@ class CookbookContinuum(object):
         lines = LineList(peaks.x, peaks.xmin, peaks.xmax, peaks.y, peaks.dy,
                          spec._xunit, spec._yunit, spec._meta)
 
-        if append and self.sess.lines != None:
-            self.sess.lines._append(lines)
+        if append and sess.lines != None:
+            sess.lines._append(lines)
         else:
-            self.sess.lines = lines
+            sess.lines = lines
 
-        self.sess.lines_kind = 'peaks'
-        spec._lines_mask(self.sess.lines)
+        sess.lines_kind = 'peaks'
+        spec._lines_mask(sess.lines)
         logging.info("I'm using peaks as lines.")
-        return 0
+
+        if new_sess:
+            return sess
+        else:
+            return 0

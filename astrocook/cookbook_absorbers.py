@@ -16,6 +16,11 @@ class CookbookAbsorbers(object):
     def __init__(self):
         pass
 
+    def _lines_cand_find(self, series, z_start, z_end, dz, logN, single=False):
+        return self.sess.lines._cand_find(series, z_start, z_end, dz, logN,
+                                          single)
+
+
     def _mods_recreate(self, resol, max_nfev=0, verbose=True):
         """ Create new system models from a system list """
         spec = self.sess.spec
@@ -50,10 +55,6 @@ class CookbookAbsorbers(object):
         #systs._id += 1
         systs._id = np.max(systs._t['id'])+1
         return 0
-
-
-    def _lines_cand_find(self, series, z_start, z_end, dz, logN):
-        return self.sess.lines._cand_find(series, z_start, z_end, dz, logN)
 
 
     def _spec_update(self):
@@ -278,7 +279,7 @@ class CookbookAbsorbers(object):
                  resol=resol_def, chi2r_thres=np.inf, dlogN_thres=0.5,
                  max_nfev=100):
         """ @brief New system
-        @details Add and (optionally) fit a Voigt model for a system.
+        @details Add and fit a Voigt model for a system.
         @param series Series of transitions
         @param z Guess redshift
         @param logN Guess (logarithmic) column density
@@ -318,7 +319,7 @@ class CookbookAbsorbers(object):
                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
                              chi2r_thres=np.inf, dlogN_thres=0.5,
                              max_nfev=100, append=True):
-        """ @brief Fit systems from line list
+        """ @brief New systems from line list
         @details Add and fit Voigt models to a line list, given a redshift
         range.
         @param series Series of transitions
@@ -349,7 +350,7 @@ class CookbookAbsorbers(object):
             dlogN_thres = float(dlogN_thres)
             resol = float(resol)
             max_nfev = int(max_nfev)
-            append = append == 'True'
+            append = append or append == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
@@ -371,13 +372,13 @@ class CookbookAbsorbers(object):
 
         return 0
 
-    def systs_new_from_resids(self, series='Lya', z_start=0, z_end=6,
-                              dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
-                              chi2r_thres=np.inf, dlogN_thres=0.5,
-                              max_nfev=100, append=True):
-        """ @brief Fit systems from residuals
-        @details Add and fit Voigt models from residuals of previously fitted
-        models.
+    def syst_new_from_resids(self, series='Lya', z_start=0, z_end=6,
+                             dz=1e-4, logN=logN_def, b=b_def, resol=resol_def,
+                             chi2r_thres=np.inf, dlogN_thres=0.5,
+                             max_nfev=100, append=True):
+        """ @brief New system from residuals
+        @details Add and fit a Voigt model from the strongest residual of
+        previously fitted models in the neighborhood.
         @param series Series of transitions
         @param z_start Start redshift
         @param z_end End redshift
@@ -406,16 +407,15 @@ class CookbookAbsorbers(object):
             dlogN_thres = float(dlogN_thres)
             resol = float(resol)
             max_nfev = int(max_nfev)
-            append = append == 'True'
+            append = append or append == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
 
-        # Select systems by redshift range and reduced chi2 threshold
-        cond_z =  np.logical_and(systs._mods_t['z0'] > z_start,
-                                 systs._mods_t['z0'] < z_end)
-        cond_chi2r = np.logical_or(systs._mods_t['chi2r'] > chi2r_thres,
-                                   np.isnan(systs._mods_t['chi2r']))
-        old = systs._mods_t[np.where(np.logical_and(cond_z, cond_chi2r))]
+        self.gauss_convolve(std=4, input_col='deabs', output_col='deabs_conv')
+        sess = self.peaks_find(col='deabs_conv', kind='min', kappa=3.0, new_sess=True)
 
-        return 0
+        z_cand, logN_cand = self._lines_cand_find(series, z_start, z_end, dz,
+                                   single=True
+
+        return sess

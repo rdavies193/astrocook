@@ -65,7 +65,8 @@ class Workflow(object):
 
                 cb.systs_new_from_lines(series='CIV', logN=13.0, b=20.0,
                                         dz=5e-5, z_end=zem, max_nfev=10)#, relerr_thres=0.1)
-
+                sess_out = cb.syst_new_from_resids(series='CIV', logN=13.0, b=20.0,
+                                                   dz=5e-5, z_end=zem, max_nfev=10)
                 #cb.systs_new_from_resids(chi2r_thres=2.0, logN=13.0, b=10.0,
                 #                         maxfev=10)
                 #cb.systs_compl(n=10)#, z_start=2.128, z_end=2.1372)
@@ -93,3 +94,5 @@ class Workflow(object):
         end_all = dt.datetime.now()
         logging.info("I completed civ_full in %3.3f seconds!" \
                      % ((end_all-start_all).total_seconds()))
+
+        return sess_out

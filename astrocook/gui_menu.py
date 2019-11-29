@@ -138,7 +138,9 @@ class GUIMenuCook(GUIMenu):
         from .cookbook import Cookbook
         from .workflow import Workflow
         wf = Workflow(self._gui, Cookbook())
-        wf.civ_full()
+        sess = wf.civ_full()
+        print(sess)
+        self._gui._panel_sess._on_add(sess, open=False)
 
     """
     def _on_civ_full_old(self, event):
@@ -423,6 +425,7 @@ class GUIMenuSnacks(GUIMenu):
         #self._item_method(self._menu, start_id+303, 'systs',
         #                  "Add and fit systems from residuals",
         #                  'add_syst_from_resids')
+        """
         self._item_method(self._menu, start_id+303, 'systs',
                           "New systems from residuals",
                           'systs_new_from_resids')
@@ -435,7 +438,7 @@ class GUIMenuSnacks(GUIMenu):
         self._item_method(self._menu, start_id+402, 'systs',
                           "Estimate completeness with simulated systems",
                           'systs_compl')
-
+        """
 
 class GUIMenuView(GUIMenu):
 
