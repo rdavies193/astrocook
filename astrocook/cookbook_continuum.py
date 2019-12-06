@@ -1,6 +1,7 @@
 from .functions import log2_range
 from .message import *
 from astropy import units as au
+from copy import deepcopy as dc
 from scipy.interpolate import UnivariateSpline as uspline
 
 class CookbookContinuum(object):
@@ -111,39 +112,63 @@ class CookbookContinuum(object):
 
 ### Advanced
 
-    def lines_find(self, std_start=100.0, std_end=0.0, col='y', kind='min',
+    def lines_find(self, #std_start=100.0, std_end=0.0, col='y',
+                   dx_start=55.0, dx_end=0.0,
+                   xunit=au.km/au.s,
+                   kind='min',
                    kappa_peaks=5.0, append=True):
         """ @brief Find lines
         @details Create a line list by convolving a spectrum with different
         gaussian profiles and finding the peaks in the convolved spectrum
-        @param std_start Start standard deviation of the gaussian (km/s)
-        @param std_end End standard deviation of the gaussian (km/s)
-        @param col Column to convolve
+        @param dx_start Start step in x
+        @param dx_end End step in x
+        @param xunit Unit of wavelength or velocity
         @param kind Kind of extrema ('min' or 'max')
         @param kappa_peaks Number of standard deviations
         @param append Append lines to existing line list
         @return 0
         """
 
+        #@param std_start Start standard deviation of the gaussian (km/s)
+        #@param std_end End standard deviation of the gaussian (km/s)
+        #@param col Column to convolve
+
         try:
+            """
             std_start = float(std_start)
             std_end = float(std_end)
+            """
+            dx_start = float(dx_start)
+            dx_end = float(dx_end)
+            xunit = au.Unit(xunit)
             kappa_peaks = float(kappa_peaks)
             append = str(append) == 'True'
         except:
             logging.error(msg_param_fail)
             return 0
 
+        """
         if col not in self.sess.spec.t.colnames:
             logging.error(msg_col_miss(col))
             return 0
+        """
 
         #for i, std in enumerate(log2_range(std_start, std_end, -1)):
+        """
         for i, std in enumerate(np.arange(std_start, std_end, -5)):
             col_conv = col+'_conv'
             self.gauss_convolve(std=std, input_col=col, output_col=col+'_conv')
             self.peaks_find(col=col_conv, kind='min', kappa=kappa_peaks,
                             append=append or i>0)
+        """
+        spec_temp = dc(self.sess.spec)
+        for i, dx in enumerate(np.arange(dx_start, dx_end, -10)):
+            spec_temp._xunit_old = spec_temp.x.unit
+            self.sess.spec = spec_temp._rebin(dx, xunit)
+            self.peaks_find(col='y', kind='min', kappa=kappa_peaks,
+                            append=append or i>0)
+        #spec_temp._t['lines_mask'] = self.sess.spec._t['lines_mask']
+        self.sess.spec = spec_temp
 
         return 0
 
