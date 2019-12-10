@@ -9,7 +9,7 @@ from lmfit import Parameters as LMParameters
 from matplotlib import pyplot as plt
 import numpy as np
 
-thres = 5e-3
+thres = 5e-3 #5e-3
 
 class SystModel(LMComposite):
 
@@ -33,14 +33,22 @@ class SystModel(LMComposite):
     def _fit(self, fit_kws={}):
         time_start = datetime.datetime.now()
         #self._pars.pretty_print()
+        #plt.step(self._xs, self._ys)
+        #plt.step(self._xf, self._yf)
         fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
-                                         weights=self._wf, fit_kws=fit_kws,
+                                         weights=self._wf,
+                                         fit_kws=fit_kws,
                                          method='least_squares')
                                          #method='emcee')
-        #self._pars.pretty_print()
         time_end = datetime.datetime.now()
         #print(fit.nfev, time_end-time_start)
         self._pars = fit.params
+        #self._pars.pretty_print()
+        #plt.plot(self._xf, self._psf.eval(x=self._xf))
+        #plt.plot(self._xs, self.eval(x=self._xs, params=self._pars))
+        #plt.plot(self._xf, self.eval(x=self._xf, params=self._pars))
+        #plt.xlim(972, 977)
+        #plt.show()
         self._chi2r = fit.redchi
         self._aic = fit.aic
         self._bic = fit.bic
@@ -137,10 +145,13 @@ class SystModel(LMComposite):
 
     def _make_psf(self):
         d = self._defs
-        for i, r in enumerate(self._xr):
+        #for i, r in enumerate(self._xr):
+        for i, r in enumerate([self._xf]):
             if self._resol == None:
                 c = np.where(self._spec.x.to(au.nm).value==r[len(r)//2])
                 d['resol'] = self._spec.t['resol'][c][0]
+            #d['resol'] = 1e4
+
             self._psf_pref = self._psf_func.__name__+'_'+str(i)+'_'
             psf = LMModel(self._psf_func, prefix=self._psf_pref, reg=r)
             if i == 0:
@@ -152,21 +163,30 @@ class SystModel(LMComposite):
                 (self._psf_pref+'resol', d['resol'], d['resol_vary'],
                  d['resol_min'], d['resol_max'], d['resol_expr']))
 
-
     def _make_regs(self, thres=thres):
         spec = self._spec
 
-        #ys = self._group.eval(x=self._xs, params=self._pars)
-        #c = np.where(ys<1-thres)[0]
+        """
+        ys = self._group.eval(x=self._xs, params=self._pars)
+        c = np.where(ys<1-thres)[0]
+        """
         c = []
-        t = thres
+        t = 1e-7
         while len(c)==0:
             c = np.where(self._ys<1-t)[0]
             t = t*0.5
+        #"""
+        #print(len(c))
+        if len(c)%2==0:
+            c = c[:-1]
+        #print(len(c))
 
         self._xr = np.split(self._xs[c], np.where(np.ediff1d(c)>1.5)[0]+1)
+        self._yr = np.split(spec.y[c]/spec._t['cont'][c], np.where(np.ediff1d(c)>1.5)[0]+1)
 
         self._xf = np.concatenate([np.array(x) for  x in self._xr])
+        #print([len(r) for r in self._xr])
+        #print(len(self._xf))
         self._yf = np.array(spec.y[c]/spec._t['cont'][c])
         self._wf = np.array(spec._t['cont'][c]/spec.dy[c])
         try:

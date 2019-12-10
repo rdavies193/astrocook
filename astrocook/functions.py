@@ -35,7 +35,9 @@ def convolve(data, psf):
         l = len(k)
         k_arr = k[np.where(k>0)]
         k_arr = k_arr/np.sum(k_arr)
-        data_arr = data#[s:s+l]
+        data_arr = data
+        #data_arr = data[s:s+l]
+        #print(s, l, len(data_arr), data_arr)
         pad_l = len(k_arr)#*2
         pad = np.ones(pad_l)
         temp_arr = np.concatenate((pad*data_arr[0], data_arr, pad*data_arr[-1]))
@@ -150,8 +152,8 @@ def psf_gauss(x, #center, resol):
     @param resol Resolution
     @return Gaussian PSF over x
     """
-
     c = np.nanmedian(reg)
+    #print(len(reg), reg, c)
     sigma = c / resol * 4.246609001e-1
     psf = np.exp(-0.5*((x-c) / sigma)**2)
     #psf[np.where(psf < 1e-4)] = 0.0
