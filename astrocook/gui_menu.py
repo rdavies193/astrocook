@@ -517,6 +517,8 @@ class GUIMenuRecipes(GUIMenu):
         self._item_method(submenu, start_id+314, 'z0',
                           "Estimate position uncertainty", 'systs_sigmav')
         submenu.AppendSeparator()
+        self._item_method(submenu, start_id+321, 'z0',
+                          "Supersede systems", 'systs_supersede')
         self._item_method(submenu, start_id+322, 'z0',
                           "Clean systems", 'systs_clean')
         self._item_method(submenu, start_id+323, 'z0',
