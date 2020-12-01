@@ -71,6 +71,9 @@ class Session(object):
             #root =  '/'.join(os.path.realpath(self.path).split('/')[:-1])
             with tarfile.open(self.path) as arch:
                 arch.extractall(path=root)
+                print(self.path[:-4])
+                print(root)
+                print(pathlib.PurePath(self.path[:-4]).parts[-1])
                 hdul = fits.open(self.path[:-4]+'_spec.fits')
                 hdr = hdul[1].header
         elif self.path[-4:] == 'fits':
