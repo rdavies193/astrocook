@@ -1,6 +1,8 @@
 from .message import *
 from .vars import *
+import ast
 from astropy import constants as ac
+from copy import deepcopy as dc
 import cProfile
 import scipy.ndimage.filters as filters
 import scipy.ndimage.morphology as morphology
@@ -143,6 +145,53 @@ def detect_local_minima(arr):
     detected_minima = local_min #- eroded_background
     #return np.where(detected_minima)
     return detected_minima
+
+def expr_check(node):
+    if isinstance(node, list):
+        iter = node
+    elif isinstance(node, ast.List):
+        iter = node.elts
+    else:
+        return expr_eval(node)
+
+    ret = []
+    for i in iter:
+        if isinstance(node, ast.Num):
+            ret.append(float(i.n))
+        else:
+            ret.append(expr_eval(i))
+    return np.ravel(ret)
+
+def expr_eval(node):
+    if isinstance(node, ast.Num): # <number>
+        return node.n
+
+    elif isinstance(node, ast.BinOp): # <left> <operator> <right>
+        return py_ops[type(node.op)](expr_check(node.left),
+                                     expr_check(node.right))
+
+    elif isinstance(node, ast.Call):
+        return getattr(np, expr_eval(node.func))(expr_check(node.args))
+
+    elif isinstance(node, ast.Compare):
+        left = expr_check(node.left)
+        for i, (o,c) in enumerate(zip(node.ops, node.comparators)):
+            if i == 0:
+                cond = py_ops[type(o)](left, expr_eval(c))
+            else:
+                cond = np.logical_and(cond, py_ops[type(o)](left, expr_eval(c)))
+            left = expr_eval(c)
+        return cond
+
+    elif isinstance(node, ast.Name):
+        return node.id
+
+    elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
+        return py_ops[type(node.op)](expr_eval(node.operand))
+    else:
+        #raise TypeError(node)
+        return expr_check(node)
+
 
 def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     """ @brief Voigt function (real part of the Faddeeva function, after a

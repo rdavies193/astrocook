@@ -1,5 +1,7 @@
-from .vars import *
+from .functions import expr_eval
 from .message import *
+from .vars import *
+import ast
 from copy import deepcopy as dc
 import numpy as np
 import sys
@@ -36,6 +38,34 @@ class CookbookGeneral(object):
         self.sess.spec._zap(xmin, xmax)
 
 
+    def flux_ccf(self, col1='y', col2='y', vstart=-20, vend=20, dv=1e-1):
+        """@brief Compute the flux CCF
+        @details Convolve the cross-correlation function between two columns
+        with flux information. Typically, the second column contain the flux
+        density from a different spectrum, but it can be equal to the first
+        column (in which case auto-correlation is computed). Cross-correlation
+        is computed in velocity space, within a given range and with a given
+        step.
+        @param y First column
+        @param y Second column
+        @param vstart Start velocity
+        @param vend End velocity
+        @param dv Velocity step
+        @return 0
+        """
+
+        try:
+            vstart = float(vstart) * au.km/au.s
+            vend = float(vend) * au.km/au.s
+            dv = float(dv) * au.km/au.s
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+
+        self.sess.spec._flux_ccf(col1, col2, vstart, vend, dv)
+        return 0
+
+
     def gauss_convolve(self, std=20.0, input_col='y', output_col='conv'):
         """@brief Convolve with gaussian
         @details Convolve a spectrum column with a gaussian profile using FFT
@@ -53,6 +83,42 @@ class CookbookGeneral(object):
             return 0
 
         self.sess.spec._gauss_convolve(std, input_col, output_col)
+        return 0
+
+    def mask(self, col='mask', cond='', new_sess=True):
+        """ @brief Create a spectral mask
+        @details Create a spectral mask by applying a given condition. The
+        condition must be parsable by AST, with spectrum columns denoted by
+        their names (e.g. 'x>400'). Optionally, a new session is created with
+        the masked spectrum. Other objects from the old session (line lists,
+        etc.) are discarded.
+        @param col Column with the mask
+        @param cond Condition
+        @param new_sess Create a new session from masked spectrum
+        @return 0
+        """
+
+        spec = self.sess.spec
+
+        for c in sorted(spec._t.colnames, key=len, reverse=True):
+            cond = cond.replace(c, str(list(np.array(spec._t[c]))))
+            #print(c, cond)
+        mask = expr_eval(ast.parse(cond, mode='eval').body)
+
+        if col not in spec._t.colnames:
+            logging.info("I'm adding column %s." % col)
+        else:
+            logging.info("I'm updating column %s." % col)
+        spec._t[col] = mask
+
+        if new_sess:
+            spec_out = dc(spec)
+            spec_out._t = spec._t[mask]
+            from .session import Session
+            new = Session(gui=self.sess._gui, name=self.sess.name+'_'+col,
+                          spec=spec_out)
+            return new
+
         return 0
 
 
@@ -369,3 +435,12 @@ class CookbookGeneral(object):
             except:
                 logging.debug(msg_attr_miss(s))
         return 0
+
+    def z_ax(self, trans='Ly_a'):
+        """ @brief Show redshift axis
+        @details Show an additional axis on the plot with wavelength converted
+        into redshift for a given transition
+        @param trans Transition
+        @return 0
+        """
+        self.sess._ztrans = trans

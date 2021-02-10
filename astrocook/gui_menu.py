@@ -426,7 +426,7 @@ class GUIMenuEdit(GUIMenu):
                           enable=len(self._gui._sess_list)>0,
                           obj=self._gui._panel_sess)
         self._item_method(self._menu, start_id+311, None,
-                          "Modify structures", 'struct_modify',
+                          "Modify structures", 'struct_modify2',
                           enable=len(self._gui._sess_list)>0,
                           obj=self._gui._panel_sess)
         submenu = wx.Menu()
@@ -530,13 +530,18 @@ class GUIMenuRecipes(GUIMenu):
 
         # Add items to Recipes menu here
         self._item_method(self._menu, start_id+100, 'spec',
-                          "Rebin spectrum", 'rebin')
+                          "Create spectral mask", 'mask')
         self._item_method(self._menu, start_id+101, 'spec',
-                          "Convolve with gaussian", 'gauss_convolve')
+                          "Rebin spectrum", 'rebin')
         self._item_method(self._menu, start_id+102, 'spec',
-                          "Estimate resolution", 'resol_est')
+                          "Convolve with gaussian", 'gauss_convolve')
         self._item_method(self._menu, start_id+103, 'spec',
+                          "Estimate resolution", 'resol_est')
+        self._item_method(self._menu, start_id+104, 'spec',
                           "Estimate SNR", 'snr_est')
+        submenu = wx.Menu()
+        self._item_method(submenu,start_id+110, 'spec', "Compute CCF", 'flux_ccf')
+        self._menu.AppendSubMenu(submenu, "Other general recipes")
 
         self._menu.AppendSeparator()
         self._item_method(self._menu, start_id+200, 'spec', "Find lines",
@@ -556,7 +561,7 @@ class GUIMenuRecipes(GUIMenu):
                           'nodes_clean')
         self._item_method(submenu, start_id+214, 'nodes',
                           "Interpolate nodes", 'nodes_interp')
-        self._menu.AppendSubMenu(submenu, "Other recipes")
+        self._menu.AppendSubMenu(submenu, "Other recipes for continuum")
         self._menu.AppendSeparator()
 
         #self._item_method(self._menu, start_id+301, 'lines',
@@ -598,7 +603,7 @@ class GUIMenuRecipes(GUIMenu):
         submenu.AppendSeparator()
         self._item_method(submenu,start_id+331, 'z0', "Compute CCF",
                           'mods_ccf_max')
-        self._menu.AppendSubMenu(submenu, "Other recipes")
+        self._menu.AppendSubMenu(submenu, "Other recipes for absorbers")
         #self._item_method(self._menu, start_id+303, 'systs',
         #                  "Add and fit systems from residuals",
         #                  'add_syst_from_resids')
@@ -691,6 +696,11 @@ class GUIMenuView(GUIMenu):
         self._norm = self._item(self._menu, start_id+203, 'spec', "Toggle normalization",
                                 self._on_norm, key='norm')
         self._menu.AppendSeparator()
+        self._item_method(self._menu, start_id+301, 'spec', "Set redshift axis",
+                              'z_ax')
+        self._item(self._menu, start_id+302, 'spec', "Hide redshift axis",
+                   self._on_z_ax_remove)
+        self._menu.AppendSeparator()
         self._submenu = wx.Menu()
         self._item_graph(self._menu, start_id+402, 'spec', "Edit graph elements",
                          dlg_mini='graph', alt_title="Graph elements")
@@ -775,3 +785,7 @@ class GUIMenuView(GUIMenu):
         if hasattr(self._gui, '_dlg_mini_log') \
             and self._gui._dlg_mini_log._shown:
             self._gui._dlg_mini_log._refresh()
+
+    def _on_z_ax_remove(self, event, log=False):
+        delattr(self._gui._sess_sel, '_ztrans')
+        self._gui._refresh()
