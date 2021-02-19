@@ -1051,7 +1051,8 @@ class CookbookAbsorbers(object):
             z1 = np.max(self.sess.spec.x)/x0-1
             z_start = max(z0, z_start)
             z_end = min(z1, z_end)
-            if p0==p1 and x0<x1:# and (z0>z_start or z1<z_end):
+            # if p0==p1 and x0<x1:# and (z0>z_start or z1<z_end):
+            if x0<x1:# and (z0>z_start or z1<z_end):
                 s = "%s,%s" % (t[0],t[1])
                 #print(s)
                 z_l, logN_l, _ = self.sess.lines._cands_find2(s, z_start, z_end, dz)
@@ -1231,7 +1232,9 @@ class CookbookAbsorbers(object):
                             xi = to_x(zi,si)
                             if xi > np.min(self.sess.spec.x) and xi < np.max(self.sess.spec.x):
                                 wi = np.abs(self.sess.spec.x - xi).argmin()
-                                mi = self.sess.spec.t['model'][wi]
+                                # EDITED to work even if model is not continuum normalized
+                                # mi = self.sess.spec.t['model']
+                                mi = (self.sess.spec.t['model']/self.sess.spec.t['cont'])[wi]
                             #add = bool(add and mi>1-1e-4)
                                 if mi>1-1e-4:# and False:
                                     z = z_l[0]
