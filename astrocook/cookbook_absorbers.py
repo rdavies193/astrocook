@@ -1160,14 +1160,14 @@ class CookbookAbsorbers(object):
             #self._syst_fit(mod)
             #print(self.sess.systs._t)
             #print(self.sess.systs._mods_t['id'])
-            if self._refit_n == 0:
-                self._mods_recreate()
+            # if self._refit_n == 0:
+            #     self._mods_recreate()
             #print(self.sess.systs._mods_t['id'])
             #print(i, 'midway')
             #print(mod._pars.pretty_print())
             #for m in self.sess.systs._mods_t['mod']:
             #    m._pars.pretty_print()
-            self._systs_cycle()
+            # self._systs_cycle()
             #print(i, 'after')
             #print(mod._pars.pretty_print())
             #for m in self.sess.systs._mods_t['mod']:
