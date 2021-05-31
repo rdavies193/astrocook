@@ -256,7 +256,7 @@ class SystModel(LMComposite):
     def _make_lines(self):
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
         line = LMModel(self._lines_func, prefix=self._lines_pref,
-                       series=self._series)
+                       series=make_trans_list(self._series))
         d = self._defs
         self._pars = line.make_params()
         #print(d['z'])
@@ -277,7 +277,7 @@ class SystModel(LMComposite):
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
         self._psf_pref = self._psf_func.__name__+'_'+str(self._id)+'_'
         line = LMModel(self._lines_func, prefix=self._lines_pref,
-                       series=self._series)
+                       series=make_trans_list(self._series))
         psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
         line_psf = LMComposite(line, psf, convolve_simple)
 

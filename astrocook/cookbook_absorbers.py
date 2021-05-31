@@ -317,6 +317,29 @@ class CookbookAbsorbers(object):
         deabs[s] = cont[s] + y[s] - model[s]
         return 0
 
+    """def _syst_add_many(self, series_list, z_list, logN_list, b_list, resol_list, verbose=True):
+        systs = self.sess.systs
+        spec = self.sess.spec
+
+        for (series, z, logN, b, resol) in zip([series_list, z_list, logN_list, b_list, resol_list]):
+            if z in systs._t['z0'] \
+                and series in systs._t['series'][systs._t['z0']==z]:
+                if verbose:
+                    logging.warning("Redshift %2.4f already exists. Choose another "
+                                    "one." % z)
+                return None
+
+            systs._t.add_row(['voigt', series, z, z, None, logN, None, b,
+                            None, None, None, None, systs._id])
+
+        mod = SystModel(spec, systs, z0=z)
+        for (series, z, logN, b, resol) in zip([series_list, z_list, logN_list, b_list, resol_list]):
+            mod._new_voigt(series, z, logN, b, resol)
+        self._mods_update(mod, incr=False)
+        #systs._id = np.max(systs._t['id'])+1
+
+        # When a single system is added, it is stored only on the model table
+        return mod"""
 
     def _syst_add(self, series, z, logN, b, resol, verbose=True):
         systs = self.sess.systs
@@ -1174,10 +1197,85 @@ class CookbookAbsorbers(object):
             #print(self.sess.systs._mods_t['id'])
         #refit_id = self._systs_reject(chi2r_thres, dlogN_thres)
         #self._systs_refit(refit_id, max_nfev)
-        self._spec_update()
+        # self._spec_update()
 
         return 0
 
+
+    def systs_new(self, systems, chi2r_thres=np.inf, dlogN_thres=np.inf,
+                 refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
+        """ @brief New systems
+        @details Add and fit a Voigt model for a system.
+        @param chi2r_thres Reduced chi2 threshold to accept the fitted model
+        @param dlogN_thres Column density error threshold to accept the fitted model
+        @param refit_n Number of refit cycles
+        @param chi2rav_thres Average chi2r variation threshold between cycles
+        @param max_nfev Maximum number of function evaluation
+        @return 0
+        """
+
+        try:
+            self._chi2r_thres = float(chi2r_thres)
+            self._dlogN_thres = float(dlogN_thres)
+            self._refit_n = int(refit_n)
+            self._chi2rav_thres = float(chi2rav_thres)
+            self._max_nfev = int(max_nfev)
+        except ValueError:
+            logging.error(msg_param_fail)
+            return 0
+
+        self._systs_prepare()
+
+        systs = self.sess.systs
+        spec = self.sess.spec
+
+        system_dicts = systems
+        systems = []
+        for system_dict in system_dicts:
+            z = system_dict["z"]
+            logN = system_dict["logN"]
+            series = system_dict["series"]
+            b = system_dict["b"]
+            resol = system_dict["resol"]
+
+            try:
+                z = float(z)
+                logN = float(logN)
+                b = float(b)
+                resol = None if resol in [None, 'None'] else float(resol)
+            except ValueError:
+                logging.error("ERROR:" + msg_param_fail)
+                continue
+
+            check, resol = resol_check(self.sess.spec, resol)
+            if not check: continue
+            if self._z_off(trans_parse(series), z): continue
+
+            if z in systs._t['z0'] \
+                and series in systs._t['series'][systs._t['z0']==z]:
+                if verbose:
+                    logging.warning("ERROR: Redshift %2.4f already exists. Choose another "
+                                    "one." % z)
+                continue
+
+            systems.append((z, logN, series, b, resol))
+
+        for (z, logN, series, b, resol) in systems:
+            systs._t.add_row(['voigt', series, z, z, None, logN, None, b,
+                            None, None, None, None, systs._id])
+                            
+            mod = SystModel(spec, systs, z0=z)
+            mod._new_voigt(series, z, logN, b, resol)
+            self._mods_update(mod, incr=False)
+
+        """mod = SystModel(spec, systs, z0=z)
+        # self._systs_update(mod)
+        for (z, logN, series, b, resol) in systems:
+            mod._new_voigt(series, z, logN, b, resol)
+        self._mods_update(mod, incr=False)"""
+        self._systs_update(mod)
+
+        return 0
 
     def systs_complete(self, series='all', dz=1e-4, resol=resol_def, avoid_systs=True):
         """ @brief Complete systems
