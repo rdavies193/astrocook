@@ -14,10 +14,13 @@ thres = 1e-2
 
 class SystModel(LMComposite):
 
-    def __init__(self, spec, systs, series=[], vars=None, constr=None, z0=None,
+    def __init__(self, spec, systs, series=None, vars=None, constr=None, z0=None,
                  lines_func=lines_voigt,
                  psf_func=psf_gauss,
                  cont_func=None):
+        if series is None:
+            series = []
+            
         self._spec = spec
         try:
             self._mods_t = systs._mods_t
@@ -34,7 +37,9 @@ class SystModel(LMComposite):
         self._psf_func = psf_func
 
 
-    def _fit(self, fit_kws={}):
+    def _fit(self, fit_kws=None):
+        if fit_kws is None:
+            fit_kws = {}
         vary = np.any([self._pars[p].vary for p in self._pars])
         if vary:
             time_start = datetime.datetime.now()
@@ -283,7 +288,10 @@ class SystModel(LMComposite):
             #d['resol'] = self._spec.t['resol'][c][0]
             x = to_x(d['z'], trans_parse(self._series)[0])
             c = np.argmin(np.abs(self._spec.x.to(au.nm).value-x.to(au.nm).value))
-            d['resol'] = self._spec.t['resol'][c]
+            try:
+               d['resol'] = self._spec.t['resol'][c]
+            except KeyError:
+               d['resol'] = 10700
         else:
             d['resol'] = self._resol
 

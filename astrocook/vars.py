@@ -21,7 +21,7 @@ logN_def = 14
 b_def = 10
 
 resol_def = None
-max_nfev_def = 100
+max_nfev_def = 1000
 
 hwin_def = 250.0
 
@@ -47,7 +47,7 @@ graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
 pars_std_d =  {
     'z': 0.0, 'logN': 13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
     'z_vary': True, 'logN_vary': True, 'b_vary': True, 'btur_vary': False, 'resol_vary': False,
-    'z_min': 1e-3, 'logN_min': 10, 'b_min': 1.0, 'btur_min': 0.0, 'resol_min': 0,
+    'z_min': 1e-3, 'logN_min': 10, 'b_min': 5.2, 'btur_min': 0.0, 'resol_min': 0,
 #    'z_max': 1e-3, 'logN_max': 18, 'b_max': 100.0, 'btur_max': 100.0, 'resol_max': 1e6,
     'z_max': 1e-3, 'logN_max': 18, 'b_max': 200.0, 'btur_max': 200.0, 'resol_max': 1e6,
 #    'z_max': 1e-3, 'logN_max': 20, 'b_max': 1000.0, 'btur_max': 200.0, 'resol_max': 1e6,
@@ -66,7 +66,7 @@ adj_gauss_d = {
 
 # Default values for line Voigt parameters
 lines_voigt_d = {
-    'z': 0.0, 'N': 1.e13, 'b': 5.0, 'btur': 0.0,
+    'z': 0.0, 'N': 1.e13, 'b': 10.0, 'btur': 0.0,
     'z_vary': True, 'N_vary': True, 'b_vary': True, 'btur_vary': False,
     'z_min': 0.0, 'N_min': 1.e11, 'b_min': 1.0, 'btur_min': 0.0,
     'z_max': 10.0, 'N_max': 1.e22, 'b_max': 100.0, 'btur_max': 100.0,
@@ -95,8 +95,9 @@ xem_d = {k: v*au.nm for (k, v) in atom_par['col1', 'col2']}
 fosc_d = {k: v for (k, v) in atom_par['col1', 'col3']}
 gamma_d = {k: v for (k, v) in atom_par['col1', 'col4']}
 
-pars_d = {'lines_voigt_d': lines_voigt_d,
-          'psf_gauss_d': psf_gauss_d}
+# Unused?
+#pars_d = {'lines_voigt_d': lines_voigt_d,
+#          'psf_gauss_d': psf_gauss_d}
 
 trans_d = atom_par['col1']
 series_d = {k: None for k in np.unique([a.split('_')[0] for a in atom_par['col1']])}

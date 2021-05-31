@@ -340,7 +340,6 @@ class CookbookAbsorbers(object):
         self._mods_update(mod, incr=False)
         return mod
 
-
     def _syst_fit(self, mod, verbose=True):
         if self._max_nfev > 0:
             frozen = mod._fit(fit_kws={'max_nfev': self._max_nfev})

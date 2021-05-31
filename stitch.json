@@ -1,0 +1,64 @@
+{
+  "set_menu": [
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/home/bec/other/XQR30/Literature spectra/ATLASJ025-33/ATLASJ025.6821-33.4627_VIS.fits"
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "region_extract",
+      "params": {
+        "xmin": "550.607",
+        "xmax": "1015.0"
+      }
+    },
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "_on_open",
+      "params": {
+        "path": "/home/bec/other/XQR30/Literature spectra/ATLASJ025-33/ATLASJ025.6821-33.4627_NIR.fits"
+      }
+    },
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "equalize",
+      "params": {
+        "xmin": "981.89",
+        "xmax": "1026.978",
+        "_sel": [
+          1,
+          3
+        ]
+      }
+    },
+    {
+      "cookbook": "cb",
+      "recipe": "region_extract",
+      "params": {
+        "xmin": "1015.0",
+        "xmax": "2275.329"
+      }
+    },
+    {
+      "cookbook": "_panel_sess",
+      "recipe": "combine",
+      "params": {
+        "name": "*_combined",
+        "_sel": [
+          7,
+          8
+        ]
+      }
+    },
+    {
+      "cookbook": "",
+      "recipe": "_refresh",
+      "params": {
+        "autosort": false
+      }
+    }
+  ]
+}
