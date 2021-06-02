@@ -45,7 +45,7 @@ class CookbookAbsorbers(object):
         logN_list = np.arange(12, 14, 0.1)
         for logN in logN_list:
             mod = SystModel(spec, systs, z0=z)
-            mod._new_voigt(series, z, logN, b, resol)
+            mod._new_voigt(series, z, logN, b, resol, z_min = dz, z_max = dz)
             ynorm_list.append(np.min(mod.eval(x=mod._xs, params=mod._pars)))
         self._guess_f = interp1d(ynorm_list, logN_list-0.5, kind='cubic')
 
@@ -143,39 +143,39 @@ class CookbookAbsorbers(object):
     def _mods_recreate(self, **kwargs):
         return self._mods_recreate2(**kwargs)
 
-    def _mods_recreate1(self, verbose=True):
-        """ Create new system models from a system list """
-        spec = self.sess.spec
-        spec.t['fit_mask'] = False
-        systs = self.sess.systs
-        #if len(systs._t)==0: return 0
-        systs._mods_t.remove_rows(range(len(systs._mods_t)))
-        #for i,s in enumerate(systs._t):
-        if systs._compressed:
-            systs_t = systs._t_uncompressed
-        else:
-            systs_t = systs._t
-        for i,s in enum_tqdm(systs_t, len(systs_t),
-                             "cookbook_absorbers: Recreating"):
-            systs._id = s['id']
-            vars = {}
-            constr = {}
-            #print(systs._constr)
-            for k, v in systs._constr.items():
-                if v[0]==systs._id:
-                    if v[2]!=None:
-                        constr[k] = v[2]
-                    else:
-                        vars[k.split('_')[-1]+'_vary'] = False
-            mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
-            mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
-                           b=s['b'], resol=s['resol'])
-            self._mods_update(mod)
-        mods_n = len(self.sess.systs._mods_t)
-        if verbose:
-            logging.info("I've recreated %i model%s." \
-                         % (mods_n, '' if mods_n==1 else 's'))
-        return 0
+    # def _mods_recreate1(self, verbose=True):
+    #     """ Create new system models from a system list """
+    #     spec = self.sess.spec
+    #     spec.t['fit_mask'] = False
+    #     systs = self.sess.systs
+    #     #if len(systs._t)==0: return 0
+    #     systs._mods_t.remove_rows(range(len(systs._mods_t)))
+    #     #for i,s in enumerate(systs._t):
+    #     if systs._compressed:
+    #         systs_t = systs._t_uncompressed
+    #     else:
+    #         systs_t = systs._t
+    #     for i,s in enum_tqdm(systs_t, len(systs_t),
+    #                          "cookbook_absorbers: Recreating"):
+    #         systs._id = s['id']
+    #         vars = {}
+    #         constr = {}
+    #         #print(systs._constr)
+    #         for k, v in systs._constr.items():
+    #             if v[0]==systs._id:
+    #                 if v[2]!=None:
+    #                     constr[k] = v[2]
+    #                 else:
+    #                     vars[k.split('_')[-1]+'_vary'] = False
+    #         mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
+    #         mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
+    #                        b=s['b'], resol=s['resol'])
+    #         self._mods_update(mod)
+    #     mods_n = len(self.sess.systs._mods_t)
+    #     if verbose:
+    #         logging.info("I've recreated %i model%s." \
+    #                      % (mods_n, '' if mods_n==1 else 's'))
+    #     return 0
 
     def _mods_recreate2(self, only_constr=False, verbose=True):
         """ Create new system models from a system list """
@@ -234,11 +234,13 @@ class CookbookAbsorbers(object):
         #print(systs_t)
         for i,s in enum_tqdm(systs_t, len(systs_t),
                              "cookbook_absorbers: Recreating"):
+            # print(i,s)
             systs._id = s['id']
             if systs._id in mod_sel:
                 vars = {}
                 constr = {}
                 for k, v in systs._constr.items():
+                    # print(k,v)
                     if v[0]==systs._id:
                         if v[2]!=None:
                             constr[k] = v[2]
@@ -251,7 +253,7 @@ class CookbookAbsorbers(object):
                     corr_id.append(np.max(systs_t['id'])+1)
                     mod._id = np.max(systs_t['id'])+1
                 mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
-                               b=s['b'], resol=s['resol'])
+                               b=s['b'], resol=s['resol'], z_min = dz, z_max = dz)
                 self._mods_update(mod)
                 #print(mod._pars.pretty_print())
                 #print(systs._mods_t['id'])
@@ -317,30 +319,6 @@ class CookbookAbsorbers(object):
         deabs[s] = cont[s] + y[s] - model[s]
         return 0
 
-    """def _syst_add_many(self, series_list, z_list, logN_list, b_list, resol_list, verbose=True):
-        systs = self.sess.systs
-        spec = self.sess.spec
-
-        for (series, z, logN, b, resol) in zip([series_list, z_list, logN_list, b_list, resol_list]):
-            if z in systs._t['z0'] \
-                and series in systs._t['series'][systs._t['z0']==z]:
-                if verbose:
-                    logging.warning("Redshift %2.4f already exists. Choose another "
-                                    "one." % z)
-                return None
-
-            systs._t.add_row(['voigt', series, z, z, None, logN, None, b,
-                            None, None, None, None, systs._id])
-
-        mod = SystModel(spec, systs, z0=z)
-        for (series, z, logN, b, resol) in zip([series_list, z_list, logN_list, b_list, resol_list]):
-            mod._new_voigt(series, z, logN, b, resol)
-        self._mods_update(mod, incr=False)
-        #systs._id = np.max(systs._t['id'])+1
-
-        # When a single system is added, it is stored only on the model table
-        return mod"""
-
     def _syst_add(self, series, z, logN, b, resol, verbose=True):
         systs = self.sess.systs
         spec = self.sess.spec
@@ -357,7 +335,7 @@ class CookbookAbsorbers(object):
                           None, None, None, None, systs._id])
         #systs._id = np.max(systs._t['id'])+1
         mod = SystModel(spec, systs, z0=z)
-        mod._new_voigt(series, z, logN, b, resol)
+        mod._new_voigt(series, z, logN, b, resol, z_min = dz, z_max = dz)
 
         # When a single system is added, it is stored only on the model table
         self._mods_update(mod, incr=False)
@@ -1154,8 +1132,9 @@ class CookbookAbsorbers(object):
         if not check: return 0
         if self._z_off(trans_parse(series), z): return 0
 
+        # print(series)
         for i, s in enumerate(series.split(';')):
-            #print(i, 'start')
+            # print(i,s)
             #print(mod._pars.pretty_print())
             #for m in self.sess.systs._mods_t['mod']:
             #    m._pars.pretty_print()
@@ -1224,6 +1203,7 @@ class CookbookAbsorbers(object):
             logging.error(msg_param_fail)
             return 0
 
+        # this adds a system table if one doesn't exist already.
         self._systs_prepare()
 
         systs = self.sess.systs
@@ -1265,14 +1245,9 @@ class CookbookAbsorbers(object):
                             None, None, None, None, systs._id])
                             
             mod = SystModel(spec, systs, z0=z)
-            mod._new_voigt(series, z, logN, b, resol)
+            mod._new_voigt(series, z, logN, b, resol, z_min = dz, z_max = dz)
             self._mods_update(mod, incr=False)
 
-        """mod = SystModel(spec, systs, z0=z)
-        # self._systs_update(mod)
-        for (z, logN, series, b, resol) in systems:
-            mod._new_voigt(series, z, logN, b, resol)
-        self._mods_update(mod, incr=False)"""
         self._systs_update(mod)
 
         return 0

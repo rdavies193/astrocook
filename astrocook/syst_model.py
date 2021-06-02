@@ -207,6 +207,7 @@ class SystModel(LMComposite):
             mod = s['mod']
             ys_s = mod._ys
             ymax = np.maximum(ys, ys_s)
+            # if the maximum value of the model is < 1 or the 
             y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
             pars_cond = False
             for p,v in self._constr.items():
@@ -403,7 +404,8 @@ class SystModel(LMComposite):
         except:
             self._xm = np.array([])
 
-    def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None):
+    # NOTE: This starts with pars_std_d, then adds extra_vars (but only if the var is not already set)
+    def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None, **extra_vars):
         #if resol == None:
         #    self._resol = self._spec.t['resol'][len(self._spec.t)//2]
         #else:
@@ -413,6 +415,11 @@ class SystModel(LMComposite):
         for l, v in zip(['z', 'logN', 'b', 'resol'], [z, logN, b, resol]):
             if l not in self._vars:
                 self._vars[l] = v
+        
+        for name in extra_vars:
+            if name not in self._vars:
+                self._vars[name] = extra_vars[name]
+
         self._make_defs()
 
         #self._make_lines()

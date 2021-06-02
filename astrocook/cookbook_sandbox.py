@@ -61,7 +61,7 @@ class CookbookSandbox(object):
         systs = self.sess.systs
         spec._shift_rf(z_mean)
         mod = SystModel(spec, systs, z0=0)
-        mod._new_voigt(series, 0, logN, b, resol)
+        mod._new_voigt(series, 0, logN, b, resol, z_min = dz, z_max = dz)
         spec._shift_rf(0.0)
         xm = mod._xm
         hlenm = len(xm)//2
@@ -102,7 +102,7 @@ class CookbookSandbox(object):
             systs._id = s['id']
             mod = SystModel(spec, systs, z0=s['z0'])
             mod._new_voigt(series=s['series'], z=s['z'], logN=s['logN'],
-                           b=s['b'], resol=resol)
+                           b=s['b'], resol=resol, z_min = dz, z_max = dz)
             systs._update(mod)
         self.sess.systs._mods_t = systs._mods_t
 
@@ -138,7 +138,7 @@ class CookbookSandbox(object):
         systs = self.sess.systs
         systs._add(series, z, logN, b, resol)
         mod = SystModel(spec, systs, z0=z)
-        mod._new_voigt(series, z, logN, b, resol)
+        mod._new_voigt(series, z, logN, b, resol, z_min = dz, z_max = dz)
         if maxfev > 0:
             mod._fit(fit_kws={'max_nfev': maxfev})
         #plt.plot(mod._xf, mod._yf)
@@ -174,7 +174,7 @@ class CookbookSandbox(object):
         systs = self.sess.systs
         systs._add(series, z, logN, b, resol)
         mod = SystModel(spec, systs, z0=z)
-        mod._new_voigt(series, z, logN, b, resol)
+        mod._new_voigt(series, z, logN, b, resol, z_min = dz, z_max = dz)
         systs._update(mod)
         return 0
 
@@ -188,7 +188,7 @@ class CookbookSandbox(object):
 
         systs._add(series, z, logN, b, resol)
         mod = SystModel(spec, systs, z0=z)
-        mod._new_voigt(series, z, logN, b, resol)
+        mod._new_voigt(series, z, logN, b, resol, z_min = dz, z_max = dz)
 
         systs._xs = np.array(spec._safe(spec.x).to(au.nm))
         y = spec._t[col]
