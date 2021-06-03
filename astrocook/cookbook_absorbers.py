@@ -1396,14 +1396,14 @@ class CookbookAbsorbers(object):
             #self._syst_fit(mod)
             #print(self.sess.systs._t)
             #print(self.sess.systs._mods_t['id'])
-            if self._refit_n == 0:
-                self._mods_recreate()
+            # if self._refit_n == 0:
+            #     self._mods_recreate()
             #print(self.sess.systs._mods_t['id'])
             #print(i, 'midway')
             #print(mod._pars.pretty_print())
             #for m in self.sess.systs._mods_t['mod']:
             #    m._pars.pretty_print()
-            self._systs_cycle()
+            # self._systs_cycle()
             #print(i, 'after')
             #print(mod._pars.pretty_print())
             #for m in self.sess.systs._mods_t['mod']:
@@ -1411,7 +1411,7 @@ class CookbookAbsorbers(object):
             #print(self.sess.systs._mods_t['id'])
         #refit_id = self._systs_reject(chi2r_thres, dlogN_thres)
         #self._systs_refit(refit_id, max_nfev)
-        self._spec_update()
+        # self._spec_update()
 
         return 0
 
@@ -1642,18 +1642,23 @@ class CookbookAbsorbers(object):
         for s in series.split(';'):
             abs = spec._t #[np.where(spec._t['y_abs'])]
             trans = trans_parse(s)
+            # z_all is a list of 2 arrays indicating the redshift of each wavelength channel for each of the 2 lines in the pair.
             z_all = [to_z(spec._t['x'], t) for t in trans]
+            # z_int is a redshift array b/w z_start and z_end in intervals of dz.
             z_int = np.arange(z_start, z_end, dz)
             #z_int = np.arange(z_end, z_start, -dz)
             z_sel, abs_sel, abs_int = [], [], []
             for z in z_all:
+                # z is the redshift array of one of the lines
+                # sel is the indices of the wavelength channels where that line is within the selected redshift range.
                 sel = np.where(np.logical_and(z>z_start, z<z_end))
                 if len(sel[0])>0:
-                    #print(z, sel, len(sel))
+                    # z_sel is a list of the redshifts of the channels that fall within the allowed ranges.
                     z_sel.append(z[sel])
                     er = (spec._t['cont'][sel]-spec._t['y'][sel])/spec._t['dy'][sel]/np.sqrt(2)/modul
                     er = erf(er)
 
+                    # interpolate the error values from the measured channels to the array made earlier (in intervals of dz)
                     interp = np.interp(z_int, z[sel], er)
                     interp[z_int<np.min(z[sel])] = np.nan
                     interp[z_int>np.max(z[sel])] = np.nan

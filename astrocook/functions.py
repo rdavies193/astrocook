@@ -320,7 +320,7 @@ def psf_gauss(x, resol, spec=None):
 def resol_check(spec, resol, prefix=prefix):
     check = resol is not None, 'resol' in spec.t.colnames
     resol = resol if check[0] else None
-    print(msg_resol(check, prefix))
+    # print(msg_resol(check, prefix))
     return np.logical_or(*check), resol
 
 
