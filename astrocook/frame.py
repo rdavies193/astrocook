@@ -54,6 +54,10 @@ class Frame():
         return au.Quantity(self._t['x'])
 
     @property
+    def x_unitless(self):
+        return self._t['x']
+
+    @property
     def xmin(self):
         return au.Quantity(self._t['xmin'])
 

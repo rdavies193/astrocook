@@ -251,7 +251,7 @@ class CookbookContinuum(object):
 
         #check, resol = resol_check(self.sess.spec, resol)
         if resol is not None:
-            logging.info("I'm adding column 'resol'.")
+            # logging.info("I'm adding column 'resol'.")
             self.sess.spec._t['resol'] = resol
 
         #for i, std in enumerate(log2_range(std_start, std_end, -1)):
@@ -285,7 +285,7 @@ class CookbookContinuum(object):
                                    systs._t.colnames[3:9]))
         for c in cols:
             if c not in lines._t.colnames:
-                logging.info("I'm adding column '%s'." % c)
+                # logging.info("I'm adding column '%s'." % c)
                 if c in ['syst_id']:
                     lines._t[c] = at.Column(np.array(np.nan, ndmin=1), dtype=int)
                 elif c in ['func']:

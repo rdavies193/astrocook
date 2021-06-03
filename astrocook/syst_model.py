@@ -14,10 +14,13 @@ thres = 1e-2
 
 class SystModel(LMComposite):
 
-    def __init__(self, spec, systs, series=[], vars=None, constr=None, z0=None,
+    def __init__(self, spec, systs, series=None, vars=None, constr=None, z0=None,
                  lines_func=lines_voigt,
                  psf_func=psf_gauss,
                  cont_func=None):
+        if series is None:
+            series = []
+            
         self._spec = spec
         try:
             self._mods_t = systs._mods_t
@@ -34,7 +37,9 @@ class SystModel(LMComposite):
         self._psf_func = psf_func
 
 
-    def _fit(self, fit_kws={}):
+    def _fit(self, fit_kws=None):
+        if fit_kws is None:
+            fit_kws = {}
         vary = np.any([self._pars[p].vary for p in self._pars])
         if vary:
             time_start = datetime.datetime.now()
@@ -210,6 +215,7 @@ class SystModel(LMComposite):
             mod = s['mod']
             ys_s = mod._ys
             ymax = np.maximum(ys, ys_s)
+            # if the maximum value of the model is < 1 or the 
             y_cond = np.amin(ymax)<1-thres or np.amin(ymax)==np.amin(ys)
             pars_cond = False
             for p,v in self._constr.items():
@@ -259,7 +265,7 @@ class SystModel(LMComposite):
     def _make_lines(self):
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
         line = LMModel(self._lines_func, prefix=self._lines_pref,
-                       series=self._series)
+                       series=make_trans_list(self._series))
         d = self._defs
         self._pars = line.make_params()
         #print(d['z'])
@@ -280,7 +286,7 @@ class SystModel(LMComposite):
         self._lines_pref = self._lines_func.__name__+'_'+str(self._id)+'_'
         self._psf_pref = self._psf_func.__name__+'_'+str(self._id)+'_'
         line = LMModel(self._lines_func, prefix=self._lines_pref,
-                       series=self._series)
+                       series=make_trans_list(self._series))
         psf = LMModel(self._psf_func, prefix=self._psf_pref, spec=self._spec)
         line_psf = LMComposite(line, psf, convolve_simple)
 
@@ -291,7 +297,10 @@ class SystModel(LMComposite):
             #d['resol'] = self._spec.t['resol'][c][0]
             x = to_x(d['z'], trans_parse(self._series)[0])
             c = np.argmin(np.abs(self._spec.x.to(au.nm).value-x.to(au.nm).value))
-            d['resol'] = self._spec.t['resol'][c]
+            try:
+               d['resol'] = self._spec.t['resol'][c]
+            except KeyError:
+               d['resol'] = 10700
         else:
             d['resol'] = self._resol
 
@@ -403,7 +412,8 @@ class SystModel(LMComposite):
         except:
             self._xm = np.array([])
 
-    def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None):
+    # NOTE: This starts with pars_std_d, then adds extra_vars (but only if the var is not already set)
+    def _new_voigt(self, series='Ly-a', z=2.0, logN=13, b=10, resol=None, **extra_vars):
         #if resol == None:
         #    self._resol = self._spec.t['resol'][len(self._spec.t)//2]
         #else:
@@ -413,6 +423,11 @@ class SystModel(LMComposite):
         for l, v in zip(['z', 'logN', 'b', 'resol'], [z, logN, b, resol]):
             if l not in self._vars:
                 self._vars[l] = v
+        
+        for name in extra_vars:
+            if name not in self._vars:
+                self._vars[name] = extra_vars[name]
+
         self._make_defs()
 
         #self._make_lines()

@@ -23,6 +23,7 @@ import os
 from scipy.signal import argrelmin
 import tarfile
 import time
+import shutil
 
 class Session(object):
     """ Class for sessions.
@@ -56,7 +57,6 @@ class Session(object):
         self._stats = False
         self._shade = False
 
-
     def _append(self, frame, append=True):
         if append and hasattr(self, frame.__name__):
             getattr(self, frame.__name__)._append(frame)
@@ -87,7 +87,6 @@ class Session(object):
                                  fits.BinTableHDU.from_columns(np.array(t))])
             hdr = hdul[0].header
 
-
         try:
             instr = hdr['INSTRUME']
         except:
@@ -100,7 +99,6 @@ class Session(object):
             catg = hdr['HIERARCH ESO PRO CATG']
         except:
             catg = 'undefined'
-
 
         try:
             hist = [i.split(' ') for i in str(hdr['HISTORY']).split('\n')]
@@ -253,7 +251,10 @@ class Session(object):
             # generic
             if instr == 'undefined' and orig == 'undefined' and catg == 'undefined':
                 self.spec = format.generic_spectrum(hdul)
-
+        
+        # hdul.close()
+        # hdul_err.close()
+        # hdul_e.close()
 
     def save(self, path):
 
@@ -262,8 +263,16 @@ class Session(object):
 
         import warnings
         warnings.filterwarnings("ignore")
+        acs_name = root+'.acs'
+        """
+        backup_index = 1
+        if os.path.exists(acs_name):
+        while True:
+            backup_acs_name = f""
+            shutil.copyfile(acs_path, root + "_backup.acs")
+            """
 
-        with tarfile.open(root+'.acs', 'w:gz') as arch:
+        with tarfile.open(acs_name, 'w:gz') as arch:
             for s in self.seq:
                 if hasattr(self, s) and getattr(self, s) is not None:
                     if s=='systs':
@@ -353,8 +362,8 @@ class Session(object):
                     arch.add(name_dat, arcname=stem+'_'+s+'.dat')
                     os.remove(name)
                     os.remove(name_dat)
-                    logging.info("I've saved frame %s as %s."
-                                 % (s, stem+'_'+s+'.fits'))
+                    # logging.info("I've saved frame %s as %s."
+                                #  % (s, stem+'_'+s+'.fits'))
                 #else:
                 #    logging.warning("I haven't found any frame %s to save." % s)
 

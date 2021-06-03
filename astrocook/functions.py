@@ -18,6 +18,39 @@ def _gauss(x, *p):
     A, mu, sigma = p
     return A*np.exp(-(x-mu)**2/(2.*sigma**2))
 
+class Trans:
+    def __init__(self, name):
+        if name == 'unknown':
+            self.xem = None
+        else:
+            self.xem = xem_d[name]
+        self.fosc = fosc_d[name]
+        self.gamma = gamma_d[name]/au.s
+        self.atom = self.fosc * ac.e.esu**2 / (ac.m_e * ac.c)
+    
+    def get_xem(self, z: float):
+        if self.xem is None:
+            return z*au.nm
+        else:
+            return self.xem
+
+    def get_xobs(self, z: float):
+        if self.xem is None:
+            return z*au.nm
+        else:
+            return self.xem*(1+z)
+
+
+    """def __init__(self, xem, fosc, gamma):
+        self.xem = xem
+        self.fosc = fosc
+        self.gamma = gamma"""
+
+def make_trans_list(names):
+    result = []
+    for name in trans_parse(names):
+        result.append(Trans(name))
+    return result
 
 def _fadd(a, u):
     """ @brief Real part of the Faddeeva function Re(F)
@@ -28,7 +61,29 @@ def _fadd(a, u):
 
     return np.real(wofz(u + 1j * a))
 
-def _voigt_par_convert(x, z, N, b, btur, trans):
+def _voigt_par_convert(inout_x, z, N, b, btur, trans: Trans):
+    xem = trans.get_xem(z)
+    xobs = trans.get_xobs(z)
+    b_qs = np.sqrt(b**2 + btur**2)
+    tau0 = np.sqrt(np.pi) * trans.atom * N * xem / b_qs
+    # a = 0.25 * trans.gamma * xem / (np.pi * b_qs)
+    b_nms = b_qs.value * 1e12
+    a = 0.25 * trans.gamma.value * xem.value / (np.pi * b_nms)
+    # a_unitless = 
+    # TODO: Can x be modified in-place?
+    c_ms = ac.c.value
+    c_kms = c_ms/1e3
+    b_kms = b_qs.value
+    #u = np.array(x.value, dtype = "complex128")
+    inout_x /= xobs.value
+    inout_x -= 1 + 0j
+    inout_x *= c_kms/b_kms
+    #u = c_kms/b_kms * ((x/xobs) - 1)
+    # u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
+    # cqs = ac.c/b_qs
+    return tau0, a
+
+def _voigt_par_convert_old(x, z, N, b, btur, trans):
     if trans == 'unknown':
         xem = z*au.nm
         xobs = z*au.nm
@@ -195,7 +250,7 @@ def expr_eval(node):
         return expr_check(node)
 
 
-def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
+def lines_voigt(x, z, logN, b, btur, series=Trans('Ly_a')):
     """ @brief Voigt function (real part of the Faddeeva function, after a
     change of variables)
 
@@ -211,14 +266,17 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
     """
 
     #x = x[0] * au.nm
-    x = x * au.nm
+    #x = x * au.nm
     z = z * au.dimensionless_unscaled
     N = 10**logN / au.cm**2
     b = b * au.km/au.s
     btur = btur * au.km/au.s
-    model = np.ones(np.size(np.array(x)))
+    model = np.ones(np.size(x))
+    complex_x = np.array(x, dtype = "complex128")
     #for t in series_d[series]:
-    for t in trans_parse(series):
+    for i, trans in enumerate(series):
+        if i > 0:
+            complex_x[:] = x
         """
         if series == 'unknown':
             xem = z*au.nm
@@ -234,10 +292,19 @@ def lines_voigt(x, z, logN, b, btur, series='Ly_a'):
         a = 0.25 * gamma * xem / (np.pi * b_qs)
         u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
         """
-        tau0, a, u = _voigt_par_convert(x, z, N, b, btur, t)
-        model *= np.array(np.exp(-tau0.to(au.dimensionless_unscaled) \
-                          * _fadd(a, u)))
+        tau0, a = _voigt_par_convert(complex_x, z, N, b, btur, trans)
+        # fadd: return np.real(wofz(u + 1j * a))
+        complex_x += 1j * a
+        before_exp = wofz(complex_x)
+        before_exp = np.real(before_exp)
+        before_exp *= -tau0.to(au.dimensionless_unscaled).value
+        #u += 1j * a
+        #wofz_u = np.real(wofz(u))
+        exp_alloc = np.exp(before_exp)
+
+        model *= exp_alloc
         #model *= np.array(-tau0.to(au.dimensionless_unscaled) * _fadd(a, u)))
+        
 
     return model
 
@@ -298,8 +365,15 @@ def psf_gauss(x, resol, spec=None):
     c = x[len(x)//2]
     #resol = np.interp(c, spec.x, spec.t['resol'])
     sigma = c / resol * 4.246609001e-1
-    psf = np.exp(-0.5*((spec.x.to(xunit_def).value-c) / sigma)**2)
-    psf = psf[np.where(psf > 1e-6)]
+    psf = spec.x_unitless - c
+    psf /= sigma
+    psf *= psf
+    psf *= -0.5
+    np.exp(psf, out=psf)
+    #psf = np.exp(-0.5*((spec.x_unitless - c) / sigma)**2)
+    
+    psf = psf[psf > 1e-6]
+
     #xout = spec.x.to(xunit_def).value[np.where(psf > 1e-6)]
     #psf[np.where(psf < 1e-4)] = 0.0
     #psf = np.zeros(len(x))

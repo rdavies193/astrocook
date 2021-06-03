@@ -221,9 +221,9 @@ class Spectrum(Frame):
         prof = prof / np.sum(prof)
 
         # Convolve
-        if verb:
-            if output_col not in self._t.colnames:
-                logging.info("I'm adding column '%s'." % output_col)
+        # if verb:
+            # if output_col not in self._t.colnames:
+                # logging.info("I'm adding column '%s'." % output_col)
         conv = dc(self._t[input_col])
         safe = np.array(self._safe(conv), dtype=float)
         try:
@@ -279,7 +279,7 @@ class Spectrum(Frame):
         for (xmin, xmax) in zip(lines_xmin, lines_xmax):
             mask += np.logical_and(x>=xmin, x<=xmax)
         if 'lines_mask' not in self._t.colnames:
-            logging.info("I'm adding column 'lines_mask' to spectrum.")
+            # logging.info("I'm adding column 'lines_mask' to spectrum.")
             self._t['lines_mask'] = np.empty(len(self.x), dtype=bool)
         self._t['lines_mask'][self._where_safe] = mask
 
@@ -403,9 +403,9 @@ class Spectrum(Frame):
         else:
             spl = uspline(x[~isnan], y[~isnan], w=dy[~isnan], s=smooth)
         cont = spl(self.x)*self._yunit
-        logging.info("I'm using interpolation as continuum.")
-        if 'cont' not in self._t.colnames:
-            logging.info("I'm adding column 'cont'.")
+        # logging.info("I'm using interpolation as continuum.")
+        # if 'cont' not in self._t.colnames:
+            # logging.info("I'm adding column 'cont'.")
         self._t['cont'] = cont #spl(self.x)
         if hasattr(lines, '_t'):
             lines._t['cont'] = np.interp(lines.x, self.x, cont)
@@ -564,10 +564,10 @@ class Spectrum(Frame):
         dx = np.append(np.append([dx[0]]*(px//2), dx), [dx[-1]*(px//2)])\
              *self.x.unit
         if update:
-            if 'resol' not in self._t.colnames:
-                logging.info("I'm adding column 'resol'.")
-            else:
-                logging.info("I'm updating column 'resol'.")
+            # if 'resol' not in self._t.colnames:
+            #     logging.info("I'm adding column 'resol'.")
+            # else:
+            #     logging.info("I'm updating column 'resol'.")
             self._t['resol'] = self.x/dx
         logging.info('The mean estimated resolution is %4.2f.'
                      % np.mean(self._t['resol']))

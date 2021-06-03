@@ -267,7 +267,6 @@ class SystList(object):
         self._t = t
         self._mods_t = mods_t
 
-
     def _update(self, mod, mod_t=True, t=True):
 
         #print(mod._id, mod._group_sel)
