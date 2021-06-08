@@ -1710,11 +1710,14 @@ class CookbookAbsorbers(object):
             series = ';'.join(trans_d)
 
         spec = self.sess.spec
+        # dictionary of likelihoods, where the key is the transition name
         likes = {}
+        # dictionary of redshift corresponding to those likelihoods.
         z_likes = {}
 
+        # loop over different series passed to the function (generally just one)
         for s in series.split(';'):
-            abs = spec._t #[np.where(spec._t['y_abs'])]
+            # abs = spec._t #[np.where(spec._t['y_abs'])]
             trans = trans_parse(s)
             # z_all is a list of 2 arrays indicating the redshift of each wavelength channel for each of the 2 lines in the pair.
             z_all = [to_z(spec._t['x'], t) for t in trans]
@@ -1722,8 +1725,8 @@ class CookbookAbsorbers(object):
             z_int = np.arange(z_start, z_end, dz)
             #z_int = np.arange(z_end, z_start, -dz)
             z_sel, abs_sel, abs_int = [], [], []
+            # z is the redshift array of one of the lines
             for z in z_all:
-                # z is the redshift array of one of the lines
                 # sel is the indices of the wavelength channels where that line is within the selected redshift range.
                 sel = np.where(np.logical_and(z>z_start, z<z_end))
                 if len(sel[0])>0:
@@ -1845,25 +1848,25 @@ class CookbookAbsorbers(object):
 
         w_z = np.logical_and(edges>z_start, edges<z_end)
 
-
+        # print(edges[:-1][hist>0])
         self._likes, self._z_likes = {}, {}
         for z in edges[:-1][hist>0]:
-            if z>z_start and z+binz<z_end:
+            if z >= z_start and z+binz < z_end:
                 z_s = z
                 z_e = z+binz
-            elif z<z_start and z+binz>z_end:
+            elif z < z_start and z+binz >= z_end:
                 z_s = z_start
                 z_e = z_end
-            elif z<z_start and z+binz>z_start:
+            elif z < z_start and z+binz >= z_start:
                 z_s = z_start
                 z_e = z+binz
-            elif z<z_end and z+binz>z_end:
+            elif z < z_end and z+binz >= z_end:
                 z_s = z
                 z_e = z_end
             else:
                 z_s = np.nan
                 z_e = np.nan
-            #print(z, z+binz, z_start, z_end, z_s, z_e)
+            # print(z, z+binz, z_start, z_end, z_s, z_e)
             if not np.isnan(z_s) and not np.isnan(z_e):
                 likes, z_likes = self._abs_like(series, z_s, z_e, dz, modul)
                 """

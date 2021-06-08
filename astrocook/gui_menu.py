@@ -594,6 +594,8 @@ class GUIMenuRecipes(GUIMenu):
                           "Improve systems", 'systs_improve')
         self._item_method(self._menu, start_id+304, 'z0',
                           "Complete systems", 'systs_complete')
+        self._item_method(self._menu, start_id+3004, 'z0',
+                          "Complete systems from likelihood", 'systs_complete_from_like')
         self._item_method(self._menu, start_id+305, 'z0',
                           "Fit systems", 'systs_fit')
         submenu = wx.Menu()
