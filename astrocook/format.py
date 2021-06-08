@@ -21,7 +21,7 @@ class Format(object):
         return xmin, xmax
 
     def astrocook(self, frame, struct):
-        logging.info(msg_format('Astrocook %s' % struct))
+        # logging.info(msg_format('Astrocook %s' % struct))
         try:
             hdr = frame[1].header
             data = frame[1].data

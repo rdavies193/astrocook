@@ -53,7 +53,7 @@ equiv_w_v = [(au.nm, au.km/au.s,
 logN_def = 14
 b_def = 10
 
-dz = 5e-4
+dz = 1e-4
 
 resol_def = None
 max_nfev_def = 1000

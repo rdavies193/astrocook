@@ -570,17 +570,17 @@ class CookbookAbsorbers(object):
 
         # Improve
         mods_t = self.sess.systs._mods_t
-
-        if verbose and systs_n>0:
-            if len(np.unique(series_list))==1:
-                logging.info("I've added %i %s system%s in %i model%s." \
-                             % (systs_n, series_list[0],
-                             '' if systs_n==1 else 's',
-                             len(mods_t), msg_z_range(z_list)))
-            else:
-                logging.info("I've added %i system%s in %i model%s." \
-                             % (systs_n, '' if systs_n==1 else 's',
-                             len(mods_t), msg_z_range(z_list)))
+    
+        # if verbose and systs_n>0:
+        #     if len(np.unique(series_list))==1:
+        #         logging.info("I've added %i %s system%s in %i model%s." \
+        #                      % (systs_n, series_list[0],
+        #                      '' if systs_n==1 else 's',
+        #                      len(mods_t), msg_z_range(z_list)))
+        #     else:
+        #         logging.info("I've added %i system%s in %i model%s." \
+        #                      % (systs_n, '' if systs_n==1 else 's',
+        #                      len(mods_t), msg_z_range(z_list)))
         return 0
 
 
@@ -1750,7 +1750,7 @@ class CookbookAbsorbers(object):
                 z_likes[s] = z_int
                 for t in trans:
                     if t not in spec._t.colnames:
-                        logging.info("I'm adding column '%s' to spectrum." % t)
+                        # logging.info("I'm adding column '%s' to spectrum." % t)
                         spec._t[t] = np.zeros(len(spec._t))
                     #else:
                     #    logging.warning("I'm updating column '%s' in spectrum." % t)
