@@ -595,7 +595,10 @@ class GUITableSystList(GUITable):
                               for i in range(self._tab.GetNumberRows())])
 
     def _data_link_par(self, row, col):
+        # get selected cells
         self._cells_sel = sorted(self._cells_sel, key=lambda tup: tup[0])
+        # parn = 'lines_%s_%s_%s' % (self._tab.GetCellValue(row, 0), id, coln)
+        # return int(id), parn
         ref = np.argmin([int(self._key_extract(r,c)[0]) for r,c in self._cells_sel])
         others = [self._cells_sel[c] for c in np.setdiff1d(range(len(self._cells_sel)), [ref])]
         id_r, val = self._key_extract(self._cells_sel[ref][0], self._cells_sel[ref][1])

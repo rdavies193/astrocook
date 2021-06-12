@@ -570,7 +570,7 @@ class CookbookAbsorbers(object):
 
         # Improve
         mods_t = self.sess.systs._mods_t
-    
+
         # if verbose and systs_n>0:
         #     if len(np.unique(series_list))==1:
         #         logging.info("I've added %i %s system%s in %i model%s." \
@@ -830,7 +830,7 @@ class CookbookAbsorbers(object):
         for t in trans:
             x = xem_d[t]*(1+z)
             if x < self.sess.spec.x[0] or x > self.sess.spec.x[-1]:
-                logging.warning("%s transition at redshift %3.2f is outside "
+                logging.warning("%s transition at redshift %6.5f is outside "
                                 "the spectral range! Please choose a different "
                                 "series or redshift." % (t, z))
                 return 1
