@@ -56,6 +56,7 @@ class CookbookAbsorbers(object):
         ccf = np.dot(ym, y)
         if plot:
             plt.plot(xc, ym)
+            plt.scatter(xc, ym)
         if verbose:
             logging.info("The data-model CCF is %2.3f." % ccf)
         return ccf
@@ -109,27 +110,16 @@ class CookbookAbsorbers(object):
         rc = xc
         #y = (1-mod._yf)#*grad/np.sum(grad)
         xdiff = np.ediff1d(xc, to_end=np.ediff1d(xc[-2:]))/2
+        #print(len(xc), len(x_osampl), len(yc), len(y), len(eval_osampl))
         for i, xs in enumerate(x_shift):
             plot = False
             x = x_osampl+xs
-            #print(x)
-            #print(np.array(xc))
-            digitized = np.digitize(x, xc-xdiff)-1
-            #print(digitized)
-            #print(len(digitized))
-            #xm = [x[digitized == j].mean() for j in range(len(xc))]
-            #print(np.array(xm))
-            ym = [eval_osampl[digitized == j].mean() for j in range(len(xc))]
-            #print(len(xc), len(ym))
-            #if np.abs(xs)<3e-10:
-            #    plt.plot(rc, y, linewidth=4, color='r')
-            #    plt.scatter(rc, ym, linewidth=3, color='black')
-            #    plt.plot(x, eval_osampl, linewidth=4, color='r')
-            #    plt.scatter(x, digitized/100, linewidth=4, color='r')
+            #digitized = np.digitize(x, xc-xdiff)-1
+            #ym = [eval_osampl[digitized == j].mean() for j in range(len(xc))]
+            ym = np.interp(xc, x, eval_osampl)
             ccf1 = self._feat_ccf(xc, y, ym, verbose=False, plot=plot)
             if plot:
-                plt.scatter(xmean+xs, ccf1)
-            #print(xs,ccf1)
+                plt.scatter(xmean+xs, ccf1/500)
 
             ccf.append(ccf1)
 
@@ -171,7 +161,7 @@ class CookbookAbsorbers(object):
             logging.info(("I maximized the data model CCF with a shift of "
                           "%."+str(sd)+"e nm (%."+str(sd)+"e km/s)") \
                           % (deltax, deltav))
-        #plt.show()
+        if plot: plt.show()
         return ccf_max, deltax, deltav, yshift
 
 
@@ -240,7 +230,7 @@ class CookbookAbsorbers(object):
 
 
     def _feats_ccf_max(self, vstart, vend, dv, weight, xcol='x', ycol='y',
-                       dycol='dy', contcol='cont', modelcol='model', thr=1e-3,
+                       dycol='dy', contcol='cont', modelcol='model', thr=1e-1,
                        update_modelcol=False):
         weight = str(weight) == 'True'
         spec = self.sess.spec
@@ -398,7 +388,7 @@ class CookbookAbsorbers(object):
         wrong_id = []
         corr_id = []
         #print(systs_t)
-        for i,s in enum_tqdm(systs_t, len(systs_t),
+        for i,s in enum_tqdm(systs_t, len(mod_sel),#len(systs_t),
                              "cookbook_absorbers: Recreating"):
             # print(i,s)
             systs._id = s['id']
@@ -413,6 +403,7 @@ class CookbookAbsorbers(object):
                         else:
                             vars[k.split('_')[-1]+'_vary'] = False
                 #print(systs._id)
+                #if systs._id == 46: print(systs._constr.items())
                 mod = SystModel(spec, systs, z0=s['z0'], vars=vars, constr=constr)
                 if any([mod._id in i for i in systs._mods_t['id']]):
                     wrong_id.append(mod._id)
@@ -429,11 +420,17 @@ class CookbookAbsorbers(object):
                             % (w, c))
 
         systs_t.sort(['z','id'])
-        #print(systs._mods_t['id'])
-        mods_n = len(mod_w)#len(self.sess.systs._mods_t)
+        #systs._mods_t['id'].pprint(max_lines=-1)
+        #print(len(systs._mods_t))
+        systs_n = len(systs._t)
+        mods_n = len(systs._mods_t)
         if verbose:
-            logging.info("I've recreated %i model%s." \
-                         % (mods_n, '' if mods_n==1 else 's'))
+            logging.info("I've recreated %i model%s (including %i system%s)." \
+                         % (mods_n, '' if mods_n==1 else 's',
+                            systs_n, '' if systs_n==1 else 's'))
+        #profile.disable()
+        #ps = pstats.Stats(profile)
+        #ps.sort_stats('cumtime').print_stats(20)
         return 0
 
 
@@ -644,6 +641,8 @@ class CookbookAbsorbers(object):
                 logging.info("I've fitted %i model%s." \
                              % (len(mods_t), msg_z_range(z_list)))
         else:
+            for i,m in enumerate(mods_t):
+                z_list.append(m['z0'])
             if verbose:
                 logging.info("I've not fitted any model because you choose "
                              "max_nfev=0.")
@@ -777,6 +776,7 @@ class CookbookAbsorbers(object):
 
     def _systs_remove(self, rem):#, refit_id):
         systs = self.sess.systs
+        #print(systs._constr.items())
         for i, r in enum_tqdm(rem, len(rem), "cookbook_absorbers: Removing"):
             t_id = systs._t['id']
             mods_t_id = systs._mods_t['id']
@@ -790,7 +790,6 @@ class CookbookAbsorbers(object):
         systs._t.remove_rows(rem)
         for k in k_del:
             del systs._constr[k]
-
 
     def _systs_update(self, mod, incr=True):
         systs = self.sess.systs
@@ -1095,12 +1094,13 @@ class CookbookAbsorbers(object):
         return 0
 
 
-    def systs_select(self, z_min=0.0, z_max=10.0, logN_min=10.0, logN_max=22.0,
-                     b_min=1.0, b_max=100.0, col=None, col_min=None,
-                     col_max=None):
+    def systs_select(self, series='any', z_min=0.0, z_max=10.0, logN_min=10.0,
+                     logN_max=22.0, b_min=1.0, b_max=100.0, col=None,
+                     col_min=None, col_max=None):
         """ @brief Select systems
         @details Select systems based on their Voigt and fit parameters. A
         logical `and` is applied to all conditions.
+        @param series Series
         @param z_min Minimum redshift
         @param z_max Maximum redshift
         @param logN_min Minimum (logarithmic) column density
@@ -1135,10 +1135,16 @@ class CookbookAbsorbers(object):
             recompress = True
             systs._compress()
 
+        if series != 'any':
+            series_sel = [np.any([t in trans_parse(series)
+                                  for t in trans_parse(s['series'])])
+                          for s in systs._t]
+        else:
+            series_sel = np.ones(len(systs._t))
         z_sel = np.logical_and(systs._t['z']>z_min, systs._t['z']<z_max)
         logN_sel = np.logical_and(systs._t['logN']>logN_min, systs._t['logN']<logN_max)
         b_sel = np.logical_and(systs._t['b']>b_min, systs._t['b']<b_max)
-        cond = np.logical_and(z_sel, np.logical_and(logN_sel, b_sel))
+        cond = np.logical_and(np.logical_and(series_sel, z_sel), np.logical_and(logN_sel, b_sel))
 
         if col is not None:
             cond = np.logical_and(cond, np.logical_and(systs._t[col]>col_min,

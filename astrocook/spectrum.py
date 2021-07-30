@@ -338,7 +338,7 @@ class Spectrum(Frame):
         return nodes
 
 
-    def _nodes_extract(self, delta_x=1500, xunit=au.km/au.s):
+    def _nodes_extract(self, delta_x=1500, xunit=au.km/au.s, mode='std'):
 
         self._slice(delta_x, xunit)
         x_ave = []
@@ -349,15 +349,23 @@ class Spectrum(Frame):
         if 'lines_mask' not in self._t.colnames:
             logging.warning("Lines weren't masked. I'm taking all spectrum.")
 
+
         for s in self._slice_range:
-            try:
-                where_s = np.where(np.logical_and(self._t['slice']==s,
-                                                  self._t['lines_mask']==0))
-            except:
+            if mode=='std':
+                try:
+                    where_s = np.where(np.logical_and(self._t['slice']==s,
+                                                    self._t['lines_mask']==0))
+                except:
+                    where_s = np.where(self._t['slice']==s)
+            elif mode=='cont':
                 where_s = np.where(self._t['slice']==s)
 
             # Use deabs column if present
-            y = self._t['deabs'] if 'deabs' in self._t.colnames else self.y.value
+            if mode == 'std':
+                y = self._t['deabs'] if 'deabs' in self._t.colnames else self.y.value
+            elif mode == 'cont':
+                y = self._t['cont']
+
 
             if len(where_s[0])>0.1*len(np.where(self._t['slice']==s)[0]):
                 x_where_s = self.x[where_s].value
@@ -366,13 +374,17 @@ class Spectrum(Frame):
                 x_ave.append(np.median(x_where_s))
                 xmin_ave.append(x_where_s[0])
                 xmax_ave.append(x_where_s[-1])
-                y_ave.append(np.median(y_where_s))
+                if mode == 'std':
+                    y_ave.append(np.median(y_where_s))
+                elif mode == 'cont':
+                    y_ave.append(np.interp(np.median(x_where_s), x_where_s, y_where_s))
                 dy_ave.append(sem(y_where_s))
         x = np.array(x_ave) * self._xunit
         xmin = np.array(xmin_ave) * self._xunit
         xmax = np.array(xmax_ave) * self._xunit
         y = np.array(y_ave) * self._yunit
         dy = np.array(dy_ave) * self._yunit
+
 
         return Spectrum(x, xmin, xmax, y, dy, self._xunit, self._yunit)
 
@@ -522,6 +534,11 @@ class Spectrum(Frame):
 
             #print(frac[w],frac)
             dysel = dy[im:iM]
+
+            nw = np.where(~np.isnan(ysel))
+            ysel = ysel[nw]
+            dysel = dysel[nw]
+            frac = frac[nw]
             #print(dysel)
             #mask = sigma_clip(ysel, masked=True).mask
             #if np.sum(~mask)>0:
@@ -536,13 +553,14 @@ class Spectrum(Frame):
             if len(frac[w]) > 0:
                 weights = (frac[w]/dysel[w]**2).value
                 #print(frac[w], np.sum(frac[w])/len(frac[w]))
+                #nw = np.where(~np.isnan(ysel[w]))
                 if np.any(np.isnan(dysel)):# and False:
                     y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]))
                 else:
                     y_out = np.append(y_out, np.average(ysel[w], weights=weights))
                     #y_out = np.append(y_out, np.average(ysel[w], weights=frac[w]/dysel[w]**2))
-                dy_out = np.append(dy_out, np.sqrt(np.sum(weights**2*dysel[w].value**2))\
-                                                   /np.sum(weights)*y.unit)
+                dy_out = np.append(dy_out, np.sqrt(np.nansum(weights**2*dysel[w].value**2))\
+                                                   /np.nansum(weights)*y.unit)
                 #dy_out = np.append(dy_out, np.sqrt(np.sum(frac**2/dysel**2))\
                 #                                   /np.sum(frac/dysel**2))
             else:
@@ -595,23 +613,26 @@ class Spectrum(Frame):
 
 
     def _stats_print(self, xmin=0, xmax=np.inf):
-
+        try:
+            xmin = xmin.to(au.nm).value
+            xmax = xmax.to(au.nm).value
+        except:
+            pass
         sel = np.where(np.logical_and(self.x.to(au.nm).value > xmin,
                                       self.x.to(au.nm).value < xmax))
         x = self.x[sel]
         y = self.y[sel]
         dy = self.dy[sel]
-
-        self._stats = {'min_x': np.min(x),
-                       'max_x': np.max(x),
-                       'mean_x': np.mean(x),
-                       'min_y': np.min(y),
-                       'max_y': np.max(y),
-                       'mean_y': np.mean(y),
-                       'median_y': np.median(y),
-                       'std_y': np.std(y),
-                       'mean_dy': np.mean(dy),
-                       'median_dy': np.median(dy.value)*dy.unit}
+        self._stats = {'min_x': np.nanmin(x),
+                       'max_x': np.nanmax(x),
+                       'mean_x': np.nanmean(x),
+                       'min_y': np.nanmin(y),
+                       'max_y': np.nanmax(y),
+                       'mean_y': np.nanmean(y),
+                       'median_y': np.nanmedian(y),
+                       'std_y': np.nanstd(y),
+                       'mean_dy': np.nanmean(dy),
+                       'median_dy': np.nanmedian(dy.value)*dy.unit}
         self._stats_tup = tuple(np.ravel([(self._stats[s].value,
                                           self._stats[s].unit) \
                                           for s in self._stats]))
@@ -663,15 +684,22 @@ class Spectrum(Frame):
     def _zap(self, xmin, xmax):
 
         xmin = np.ravel(np.array(xmin))
-        xmax = np.ravel(np.array(xmax))
-        for m, M in zip(xmin, xmax):
-            w = np.where(np.logical_and(self.x.value>m, self.x.value<M))
-            self._t['y'][w] = np.interp(
-                                  self.x[w].value,
-                                  [self.x[w][0].value, self.x[w][-1].value],
-                                  [self.y[w][0].value, self.y[w][-1].value])*self._yunit
-            self._t['dy'][w] = np.interp(
-                                  self.x[w].value,
-                                  [self.x[w][0].value, self.x[w][-1].value],
-                                  [self.dy[w][0].value, self.dy[w][-1].value])*self._yunit
+        if xmax is not None:
+            xmax = np.ravel(np.array(xmax))
+            for m, M in zip(xmin, xmax):
+                w = np.where(np.logical_and(self.x.value>m, self.x.value<M))
+                self._t['y'][w] = np.interp(
+                                      self.x[w].value,
+                                      [self.x[w][0].value, self.x[w][-1].value],
+                                      [self.y[w][0].value, self.y[w][-1].value])*self._yunit
+                self._t['dy'][w] = np.interp(
+                                      self.x[w].value,
+                                      [self.x[w][0].value, self.x[w][-1].value],
+                                      [self.dy[w][0].value, self.dy[w][-1].value])*self._yunit
+        else:
+            #self._t.remove_row(np.abs(self._t['x'] - xmin).argmin())
+            for x in xmin:
+                r = np.nanargmin(np.abs(self._t['x'] - x))
+                self._t['x'][r] = np.nan
+
         return 0

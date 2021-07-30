@@ -17,6 +17,10 @@ class CookbookGeneral(object):
     def __init__(self):
         super(CookbookGeneral, self).__init__()
 
+    def bin_zap(self, x):
+        self.sess.spec._zap(xmin=x, xmax=None)
+
+
     def deredden(self, ebv=0.03, rv=3.1):
         """@brief Deredden spectrum
         @details Deredden the spectrum using the parametrization by Cardelli,
@@ -383,6 +387,22 @@ class CookbookGeneral(object):
 
         return 0
 
+    def _rfz_set(self, z=0.0):
+        """ @brief Set redshift for a rest-frame spectrum
+        @details Set a redshift value for a spectrum shifted to rest frame.
+        @param z redhisft
+        @return 0
+        """
+
+        for s in self.sess.seq:
+            try:
+                getattr(self.sess, s)._rfz_man = z
+            except:
+                logging.debug(msg_attr_miss(s))
+
+        return 0
+
+
     def rms_est(self, hwindow=100):
         """ @brief Estimate error from RMS
         @details Estimate flux error by computing the running RMS of the flux.
@@ -633,3 +653,12 @@ class CookbookGeneral(object):
             except:
                 logging.debug(msg_attr_miss(s))
         return 0
+
+    def z_ax(self, trans='Ly_a'):
+        """ @brief Show redshift axis
+        @details Show an additional axis on the plot with wavelength converted
+        into redshift for a given transition
+        @param trans Transition
+        @return 0
+        """
+        self.sess._ztrans = trans

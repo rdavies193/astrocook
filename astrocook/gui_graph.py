@@ -85,6 +85,14 @@ class GUIGraphMain(wx.Frame):
     #    print(self._click_xy)
 
 
+    def _on_bin_zap(self, event):
+        sess = self._gui._sess_sel
+        x = sess._clicks[-1][0]
+        sess.log.append_full('cb', 'bin_zap', {'x': x})
+        sess.spec._zap(x, None)
+        self._gui._refresh()
+
+
     def _on_cursor_stick(self, event=None, cursor_z=None):
         sess = self._gui._sess_sel
         #print(self._graph._cursor._z * sess.spec._rfz)
@@ -153,8 +161,9 @@ class GUIGraphMain(wx.Frame):
         except:
             x = (0, np.inf)
             sess._shade = False
-        xmin = np.min(x)
-        xmax = np.max(x)
+        xunit = sess.spec._xunit
+        xmin = (np.min(x)*xunit).to(au.nm).value
+        xmax = (np.max(x)*xunit).to(au.nm).value
         sess.spec._stats_print(xmin, xmax)
         sess._clicks = []
         sess._stats = True
@@ -375,10 +384,12 @@ class GUIGraphHistogram(GUIGraphMain):
         """
         scale = np.ceil(np.log(np.abs((np.max(values)-np.min(values))/np.median(values))))
         bins = int(scale)*10
-        step=2/3 #2/3
+        step= 1/3
         min = -5 #np.floor(np.min(values))
         max = 5 #np.ceil(np.max(values))
-        bins = np.arange(min-0.0*step, max+1.0*step, step)
+        #bins = np.arange(min-0.0*step, max+1.0*step, step)
+        bins = np.arange(min+0.5*step, max+0.5*step, step)
+        print(bins)
         n, bins, patches = self._ax.hist(values, align='mid', bins=bins)
         #print(n, bins)
         #mu = np.average(bins[:-1]+0.25, weights=n)
