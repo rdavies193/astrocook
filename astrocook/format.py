@@ -92,7 +92,8 @@ class Format(object):
                 except:
                     pass
 
-            for c in Table(data).colnames:
+            table = Table(data)
+            for c in table.colnames:
                 if c not in ['x', 'dx', 'xmin', 'xmax', 'y', 'dy']:
                     out._t[c] = data[c]
                     if c in ['conv', 'cont', 'model', 'deabs']:

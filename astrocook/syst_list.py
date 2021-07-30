@@ -198,31 +198,33 @@ class SystList(object):
 
     def _constrain(self, dict):
         #self._constr = {}
-        for k, v in dict.items():
+        for to_constrain, (system_id, mode, arg) in dict.items():
             #print(k, dict[k])
-            for m in self._mods_t:
-                if v[0] in m['id']:
+            for row in self._mods_t:
+                #print(row['mod'])
+                if system_id in row['id']:
                     """
                     if k in ['lines_voigt_%i_b' %i for i in (33,34,35,40,41,42)]:
                         print('inside')
                         print(v)
                         m['mod']._pars.pretty_print()
                     """
-                    if v[1]=='expr':
-                        #print(k, v[2])
-                        m['mod']._pars[k].set(expr=v[2])
-                        if v[2]=='':
-                            m['mod']._pars[k].set(vary=True)
-                        self._constr[k] = (v[0], k.split('_')[-1], v[2])
-                    if v[1]=='vary':
-                        m['mod']._pars[k].set(vary=v[2])
-                        if v[2]:
-                            if k in self._constr: del self._constr[k]
+                    if mode == 'expr':
+                        #print(k, arg)
+                        row['mod']._pars[to_constrain].set(expr=arg)
+                        if arg == '':
+                            row['mod']._pars[to_constrain].set(vary=True)
+
+                        self._constr[to_constrain] = (system_id, to_constrain.split('_')[-1], arg)
+                    elif mode == 'vary':
+                        row['mod']._pars[to_constrain].set(vary=arg)
+                        if arg:
+                            if to_constrain in self._constr: del self._constr[to_constrain]
                         else:
-                            self._constr[k] = (v[0], k.split('_')[-1], None)
-                        #print(v[0], v[1], v[2])
+                            self._constr[to_constrain] = (system_id, to_constrain.split('_')[-1], None)
+                        #print(system_id, v[1], arg)
                         #print(m['mod']._pars[k].__dict__)
-        #print(self._constr)
+                #print("after", row['mod']._pars.keys())
                 #m['mod']._pars.pretty_print()
 
     def _freeze(self):

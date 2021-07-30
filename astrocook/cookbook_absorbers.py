@@ -498,8 +498,7 @@ class CookbookAbsorbers(object):
         if z in systs._t['z0'] \
             and series in systs._t['series'][systs._t['z0']==z]:
             if verbose:
-                logging.warning("Redshift %2.4f already exists. Choose another "
-                                "one." % z)
+                logging.warning(f"Already a {series} system at z = {z}. Choose another redshift.")
             return None
 
         systs._t.add_row(['voigt', series, z, z, None, logN, None, b,
@@ -1412,13 +1411,13 @@ class CookbookAbsorbers(object):
             #print(self.sess.systs._mods_t['id'])
         #refit_id = self._systs_reject(chi2r_thres, dlogN_thres)
         #self._systs_refit(refit_id, max_nfev)
-        # self._spec_update()
+        self._spec_update()
 
         return 0
 
 
-    def systs_new(self, systems, chi2r_thres=np.inf, dlogN_thres=np.inf,
-                 refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def):
+    def systs_new(self, series_list, z_list, logN_list, b_list, resol_list, chi2r_thres=np.inf, dlogN_thres=np.inf,
+                 refit_n=0, chi2rav_thres=1e-2, max_nfev=max_nfev_def, verbose = True):
         """ @brief New systems
         @details Add and fit a Voigt model for a system.
         @param chi2r_thres Reduced chi2 threshold to accept the fitted model
@@ -1444,16 +1443,13 @@ class CookbookAbsorbers(object):
 
         systs = self.sess.systs
         spec = self.sess.spec
-
-        system_dicts = systems
-        systems = []
-        for system_dict in system_dicts:
-            z = system_dict["z"]
-            logN = system_dict["logN"]
-            series = system_dict["series"]
-            b = system_dict["b"]
-            resol = system_dict["resol"]
-
+        
+        series_to_add_list = []
+        z_to_add_list = []
+        b_to_add_list = []
+        logN_to_add_list = []
+        resol_to_add_list = []
+        for (series, z, b, logN, resol) in zip(series_list, z_list, b_list, logN_list, resol_list):
             try:
                 z = float(z)
                 logN = float(logN)
@@ -1470,21 +1466,20 @@ class CookbookAbsorbers(object):
             if z in systs._t['z0'] \
                 and series in systs._t['series'][systs._t['z0']==z]:
                 if verbose:
-                    logging.warning("ERROR: Redshift %2.4f already exists. Choose another "
-                                    "one." % z)
+                    logging.warning(f"ERROR: Already a {series} system at z = {z}. Choose another redshift.")
                 continue
 
-            systems.append((z, logN, series, b, resol))
+            series_to_add_list.append(series)
+            z_to_add_list.append(z)
+            logN_to_add_list.append(logN)
+            b_to_add_list.append(b)
+            resol_to_add_list.append(resol)
+        
+        self._systs_prepare()
 
-        for (z, logN, series, b, resol) in systems:
-            systs._t.add_row(['voigt', series, z, z, None, logN, None, b,
-                            None, None, None, None, systs._id])
-                            
-            mod = SystModel(spec, systs, z0=z)
-            mod._new_voigt(series, z, logN, b, resol, z_min = dz, z_max = dz)
-            self._mods_update(mod, incr=False)
-
-        self._systs_update(mod)
+        # NOTE: using this setup, systems are successfully added with the correct resolution.
+        self._systs_add(series_to_add_list, z_to_add_list, logN_to_add_list, b_to_add_list, resol_to_add_list)
+        self._spec_update()
 
         return 0
 
@@ -1806,12 +1801,14 @@ class CookbookAbsorbers(object):
 
         try:
             z_start = float(z_start)
+            dz = float(dz)
+            # dz is like a step value, and any more precision than dz results in interpolation, so this stops that from happening
+            z_start = round(z_start / dz) * dz
             z_end = float(z_end)
             if series == 'unknown':
                 z_start = 0
                 z_end = np.inf
             binz = float(binz)
-            dz = float(dz)
             modul = float(modul)
             thres = float(thres)
             distance = float(distance)
@@ -1829,7 +1826,6 @@ class CookbookAbsorbers(object):
             logging.error(msg_param_fail)
             return 0
 
-
         spec = self.sess.spec
         systs = self.sess.systs
 
@@ -1841,34 +1837,46 @@ class CookbookAbsorbers(object):
             series = ';'.join(trans_n)
 
         if series_ref != None:
+            # NOTE: the reference series should be one that has its own entry in the system table!!!
             w = np.where(systs._t['series']==series_ref)
-            hist, edges = np.histogram(systs._t['z'][w], bins=np.arange(0, 10, binz))
+            hist, edges = np.histogram(systs._t['z'][w], bins=np.arange(0, 7, binz))
         else:
-            hist, edges = np.histogram(systs._t['z'], bins=np.arange(0, 10, binz))
-
-        w_z = np.logical_and(edges>z_start, edges<z_end)
+            hist, edges = np.histogram(systs._t['z'], bins=np.arange(0, 7, binz))
+        
+        # print(hist,edges)
 
         # print(edges[:-1][hist>0])
         self._likes, self._z_likes = {}, {}
         for z in edges[:-1][hist>0]:
+            # whole histogram bin is within the range [z_start, z_end)
             if z >= z_start and z+binz < z_end:
                 z_s = z
                 z_e = z+binz
+            
+            # bin covers the whole range [z_start, z_end]
             elif z < z_start and z+binz >= z_end:
                 z_s = z_start
                 z_e = z_end
+            
+            # bin covers the lower boundary of the range but doesn't reach the upper boundary
             elif z < z_start and z+binz >= z_start:
                 z_s = z_start
                 z_e = z+binz
+            
+            # bin covers the upper boundary of the range but doesn't reach the lower boundary
             elif z < z_end and z+binz >= z_end:
                 z_s = z
                 z_e = z_end
+
             else:
                 z_s = np.nan
                 z_e = np.nan
+
             # print(z, z+binz, z_start, z_end, z_s, z_e)
             if not np.isnan(z_s) and not np.isnan(z_e):
                 likes, z_likes = self._abs_like(series, z_s, z_e, dz, modul)
+                # print(likes)
+                # print(series,likes)
                 """
             for s in likes.keys():
                 if s not in self._likes.keys():
@@ -1917,14 +1925,15 @@ class CookbookAbsorbers(object):
         @param append Append systems to existing system list
         @return 0
         """
-
         try:
             z_start = float(z_start)
+            dz = float(dz)
+            # dz is like a step value, and any more precision than dz results in interpolation, so this stops that from happening
+            z_start = round(z_start / dz) * dz
             z_end = float(z_end)
             if series == 'unknown':
                 z_start = 0
                 z_end = np.inf
-            dz = float(dz)
             modul = float(modul)
             thres = float(thres)
             distance = float(distance)
@@ -2061,11 +2070,11 @@ class CookbookAbsorbers(object):
         try:
             #series = series.replace(';',',')
             z_start = float(z_start)
+            dz = float(dz)
             z_end = float(z_end)
             if series == 'unknown':
                 z_start = 0
                 z_end = np.inf
-            dz = float(dz)
             if logN is not None:
                 logN = float(logN)
             b = float(b)
@@ -2129,11 +2138,11 @@ class CookbookAbsorbers(object):
         try:
             series = series.replace(';',',')
             z_start = float(z_start)
+            dz = float(dz)
             z_end = float(z_end)
             if series == 'unknown':
                 z_start = 0
                 z_end = np.inf
-            dz = float(dz)
             if logN is not None:
                 logN = float(logN)
             b = float(b)

@@ -373,11 +373,11 @@ def psf_gauss(x, resol, spec=None):
     #psf = np.exp(-0.5*((spec.x_unitless - c) / sigma)**2)
     
     psf_inds = np.where(psf > 1e-6)[0]
-    if 0 in psf_inds: # this is a fix for the corner case where the psf array falls off the end of the spectral coverage, because the line is close to the blue end of the spectrum.
-        centroid = np.nanargmax(psf)
-        psf = psf[0 : 2 * centroid + 1]
-    else:
-        psf = psf[psf_inds]
+    # if 0 in psf_inds: # this is a fix for the corner case where the psf array falls off the end of the spectral coverage, because the line is close to the blue end of the spectrum.
+    #     centroid = np.nanargmax(psf)
+    #     psf = psf[0 : 2 * centroid + 1]
+    # else:
+    psf = psf[psf_inds]
 
     #xout = spec.x.to(xunit_def).value[np.where(psf > 1e-6)]
     #psf[np.where(psf < 1e-4)] = 0.0
