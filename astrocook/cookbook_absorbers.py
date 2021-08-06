@@ -1844,14 +1844,14 @@ class CookbookAbsorbers(object):
 
         if series_ref != None:
             # NOTE: the reference series should be one that has its own entry in the system table!!!
-            w = np.where(systs._t['series']==series_ref)
-            hist, edges = np.histogram(systs._t['z'][w], bins=np.arange(0, 7, binz))
+            w = np.where(systs._t['series']==series_ref)[0]
+            med_z = np.nanmedian(systs._t['z'][w])
+            zlow = np.round((med_z - 4.5 * binz) / dz) * dz
+            zhigh = np.round((med_z + 5.5 * binz) / dz) * dz
+            hist, edges = np.histogram(systs._t['z'][w], bins=np.arange(zlow, zhigh, binz))
         else:
             hist, edges = np.histogram(systs._t['z'], bins=np.arange(0, 7, binz))
         
-        # print(hist,edges)
-
-        # print(edges[:-1][hist>0])
         self._likes, self._z_likes = {}, {}
         for z in edges[:-1][hist>0]:
             # whole histogram bin is within the range [z_start, z_end)
@@ -1881,7 +1881,7 @@ class CookbookAbsorbers(object):
             # print(z, z+binz, z_start, z_end, z_s, z_e)
             if not np.isnan(z_s) and not np.isnan(z_e):
                 likes, z_likes = self._abs_like(series, z_s, z_e, dz, modul)
-                # print(likes)
+                # print([(like, z) for (like, z) in zip(likes[series], z_likes[series])])
                 # print(series,likes)
                 """
             for s in likes.keys():
@@ -2163,8 +2163,5 @@ class CookbookAbsorbers(object):
 
         self.gauss_convolve(std=4, input_col='deabs', output_col='deabs_conv')
         sess = self.peaks_find(col='deabs_conv', kind='min', kappa=3.0, new_sess=True)
-
-
-        #z_cand =
 
         return sess

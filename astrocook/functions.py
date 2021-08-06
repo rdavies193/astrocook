@@ -93,34 +93,31 @@ def _voigt_par_convert_old(x, z, N, b, btur, trans):
     fosc = fosc_d[trans]
     gamma = gamma_d[trans]/au.s
     b_qs = np.sqrt(b**2 + btur**2)
-    atom = fosc * ac.e.esu**2 / (ac.m_e * ac.c)
-    tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
+    tau0 = np.sqrt(np.pi) * trans.atom * N * xem / b_qs
+    # a = 0.25 * trans.gamma * xem / (np.pi * b_qs)
+    b_nms = b_qs.value * 1e12
+    a = 0.25 * trans.gamma.value * xem.value / (np.pi * b_nms)
     a = 0.25 * gamma * xem / (np.pi * b_qs)
     u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
     return tau0, a, u
 
 def _voigt_par_convert_new(x, z, N, b, btur, trans):
-    if trans == 'unknown':
-        xem = z #*au.nm
-        xobs = z #*au.nm
-    else:
-        xem = xem_d[trans].value
-        xobs = xem*(1+z)
-    fosc = fosc_d[trans]
-    gamma = gamma_d[trans] #/au.s
+    xem = trans.get_xem(z)
+    xobs = trans.get_xobs(z)
     b_qs = np.sqrt(b**2 + btur**2)
-    atom = fosc *  844.7972564303736 #* au.Fr**2 * au.s / (au.kg * au.m)
-    tau0 = np.sqrt(np.pi) * atom * N * xem / b_qs
+    tau0 = np.sqrt(np.pi) * trans.atom.value * N * xem.value / b_qs
     #print(z, N, b, btur, fosc, gamma, atom, xem)
-    a = 0.25 * gamma * xem / (np.pi * b_qs)
+    b_nms = b_qs * 1e12
+    a = 0.25 * trans.gamma.value * xem.value / (np.pi * b_nms)
     #print(b_qs, x, xobs)
-    u = 299792458/b_qs * (x/xobs - 1)
     #tau0 = tau0 * au.Fr**2 * au.nm * au.s**2 / (au.cm**2 * au.kg * au.km * au.m)
     #a = a * au.nm / au.km
     #u = u * au.m / au.km
+    u = ac.c.value/b_qs * ((x/xobs.value) - 1)
     tau0 = tau0 * 1e-17
     a = a * 1e-12
     u = u * 1e-3
+    # print(tau0,a,u)
     return tau0, a, u
 
 def adj_gauss(x, z, ampl, sigma, series='Ly_a'):
@@ -290,14 +287,14 @@ def lines_voigt(x, z, logN, b, btur, series=Trans('Ly_a')):
     """
 
     #x = x[0] * au.nm
-    #x = x * au.nm
+    x = x * au.nm
     z = z * au.dimensionless_unscaled
     N = 10**logN / au.cm**2
     b = b * au.km/au.s
     btur = btur * au.km/au.s
     model = np.ones(np.size(x))
     complex_x = np.array(x, dtype = "complex128")
-    #for t in series_d[series]:
+    # for t in series_d[series]:
     for i, trans in enumerate(series):
         if i > 0:
             complex_x[:] = x
@@ -316,7 +313,7 @@ def lines_voigt(x, z, logN, b, btur, series=Trans('Ly_a')):
         a = 0.25 * gamma * xem / (np.pi * b_qs)
         u = ac.c/b_qs * ((x/xobs).to(au.dimensionless_unscaled) - 1)
         """
-        tau0, a, u = _voigt_par_convert_new(x.value, z.value, N.value, b.value, btur.value, t)
+        tau0, a, u = _voigt_par_convert_new(x.value, z.value, N.value, b.value, btur.value, trans)
         #print(tau0)#, tau0.to(au.dimensionless_unscaled))
         #tau0, a, u = _voigt_par_convert(x, z, N, b, btur, t)
         #print(_fadd(a, u), _fadd(a.to(au.dimensionless_unscaled), u.to(au.dimensionless_unscaled)))
