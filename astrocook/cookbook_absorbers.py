@@ -1845,12 +1845,12 @@ class CookbookAbsorbers(object):
         if series_ref != None:
             # NOTE: the reference series should be one that has its own entry in the system table!!!
             w = np.where(systs._t['series']==series_ref)[0]
-            med_z = np.nanmedian(systs._t['z'][w])
-            zlow = np.round((med_z - 4.5 * binz) / dz) * dz
-            zhigh = np.round((med_z + 5.5 * binz) / dz) * dz
-            hist, edges = np.histogram(systs._t['z'][w], bins=np.arange(zlow, zhigh, binz))
+            # this will place the median redshift in the middle of the histogram bin.
+            median_z = np.nanmedian(systs._t['z'][w])
         else:
-            hist, edges = np.histogram(systs._t['z'], bins=np.arange(0, 7, binz))
+            median_z = np.nanmedian(systs._t['z'])
+        z_lower_boundary = np.round(((median_z + 0.5 * binz) % binz) / dz) * dz
+        hist, edges = np.histogram(systs._t['z'][w], bins=np.arange(z_lower_boundary, 10, binz))
         
         self._likes, self._z_likes = {}, {}
         for z in edges[:-1][hist>0]:
