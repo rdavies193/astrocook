@@ -55,8 +55,10 @@ class SystModel(LMComposite):
             else:
                 max_nfev = None
             fit_kws['ftol'] = 1e-3
-            #print('out', len(self._xf), self._xf)
-            fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
+
+            # prevents mysterious untraceable convolution bugs 
+            try:
+                fit = super(SystModel, self).fit(self._yf, self._pars, x=self._xf,
                                              weights=self._wf,
                                              max_nfev=max_nfev,
                                              fit_kws=fit_kws,
@@ -64,6 +66,10 @@ class SystModel(LMComposite):
                                              #fit_kws={'method':'lm'},
                                              method='least_squares')
                                              #method='emcee')
+            except ValueError:
+                # seems to make most sense to return 1 in this situation because that's what is done if the fit is skipped entirely.
+                return 1
+
             #print(fit.result.success)
             #print(fit.result.message)
             time_end = datetime.datetime.now()
@@ -79,7 +85,6 @@ class SystModel(LMComposite):
             return 0
         else:
             return 1
-
 
     def _make_comp(self):
         super(SystModel, self).__init__(self._group, self._psf, convolve_simple)

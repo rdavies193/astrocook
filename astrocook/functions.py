@@ -322,7 +322,6 @@ def lines_voigt(x, z, logN, b, btur, series=Trans('Ly_a')):
         #model *= np.array(np.exp(-tau0.to(au.dimensionless_unscaled) \
         #                  * _fadd(a, u)))
         #model *= np.array(-tau0.to(au.dimensionless_unscaled) * _fadd(a, u)))
-        
 
     return model
 
@@ -350,9 +349,7 @@ def meta_parse(meta):
             s += "%s: %s / %s \n" % (m, meta[m], meta.comments[m])
     return s[:-2]
 
-
-def psf_gauss_wrong(x, #center, resol):
-              resol, reg=None):
+def psf_gauss(x, resol, spec=None):
     """ @brief Gaussian PSF
 
     The function returns a gaussian array for each element of a selected region
@@ -365,29 +362,15 @@ def psf_gauss_wrong(x, #center, resol):
     @param resol Resolution
     @return Gaussian PSF over x
     """
-
-    _, inds, _ = np.intersect1d(x, reg, return_indices=True)
-    c = np.nanmedian(reg)
-    sigma = c / resol * 4.246609001e-1
-    psf = np.exp(-0.5*((x[inds]-c) / sigma)**2)
-    #psf[np.where(psf < 1e-4)] = 0.0
-    #psf = np.zeros(len(x))
-    #psf[len(x)//2] = 1
-    ret = [np.array(psf)]
-    #plt.plot(x, psf)
-    ret = psf
-    return ret
-
-def psf_gauss(x, resol, spec=None):
     c = x[len(x)//2]
     #resol = np.interp(c, spec.x, spec.t['resol'])
     sigma = c / resol * 4.246609001e-1
-    psf = spec.x_unitless - c
+    psf = spec.x_unitless.data - c
     psf /= sigma
     psf *= psf
     psf *= -0.5
     np.exp(psf, out=psf)
-    #psf = np.exp(-0.5*((spec.x_unitless - c) / sigma)**2)
+    # psf = np.exp(-0.5*((spec.x_unitless - c) / sigma)**2)
     
     psf_inds = np.where(psf > 1e-6)[0]
     # if 0 in psf_inds: # this is a fix for the corner case where the psf array falls off the end of the spectral coverage, because the line is close to the blue end of the spectrum.
