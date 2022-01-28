@@ -527,6 +527,7 @@ class GUITableSystList(GUITable):
         else:
             #self._gui._dlg_mini_systems._refresh(row['series'], row['z'])
             self._gui._dlg_mini_systems._refresh(row_series, row_z)
+            self._gui._dlg_mini_systems.Show()
 
         # Color background of systems in the same group
         #mods_sel = np.where([self._data.t['id'][event.GetRow()] in i \
