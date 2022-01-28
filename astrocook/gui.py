@@ -539,6 +539,9 @@ class GUIPanelSession(wx.Frame):
 
 
     def _on_close(self, event):
+        if wx.MessageBox("Are you sure you want to quit?", "Confirm", wx.YES_NO | wx.NO_DEFAULT, self) == wx.NO:
+            return
+        
         logging.info("Bye!")
         self.Destroy()
         """
