@@ -1,3 +1,4 @@
+from typing import List, cast
 from . import *
 from .vars import *
 from .gui_dialog import *
@@ -10,6 +11,8 @@ import datetime
 import logging
 import os
 import wx
+
+recentfiles_key = "recentfiles"
 
 class GUIMenu(object):
 
@@ -36,6 +39,13 @@ class GUIMenu(object):
         bar.Append(self._courses._menu, "Set menus")
         #bar.Append(self._cook._menu, "Cook")
         return bar
+
+    def _repopulate(self):
+        pass
+
+    def _clear(self, menu: wx.Menu):
+        for item in menu.GetMenuItems():
+            menu.RemoveItem(item)
 
     def _item(self, menu, id, append, title, event, key=None, enable=True):
         if key is not None:
@@ -153,39 +163,44 @@ class GUIMenu(object):
 
 
     def _on_open(self, event, path=None, wildcard=None,
-                 action='_on_open_session'):
+                 action='_on_open_session', force_path=None):
         """ Behaviour for Session > Open """
 
-        if path is None:
-            if hasattr(self._gui, '_path'):
-                path=self._gui._path
-            else:
-                path='.'
-        if wildcard is None:
-            wildcard = "Astrocook sessions (*.acs)|*.acs|" \
-                       "FITS files (*.fits)|*.fits|" \
-                       "JSON files (*.json)|*.json|" \
-                       "CSV files (*.csv)|*.csv|" \
-                       "Text files (*.txt)|*.txt"
-        with wx.FileDialog(self._gui._panel_sess, "Open file", path,
-                           wildcard=wildcard,
-                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) \
-                           as fileDialog:
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                return
-            self._gui._path = fileDialog.GetPath()
-            """
-            try:
-                getattr(self, action)(self._gui._path)
-            except:
-                getattr(self._gui._panel_sess, action)(self._gui._path)
-            """
-        """
-        try:
-            getattr(self, action)(self._gui._path)
-        except:
-            getattr(self._gui._panel_sess, action)(self._gui._path)
-        """
+        if force_path is not None:
+            self._gui._path = force_path
+        else:
+            if path is None:
+                if hasattr(self._gui, '_path'):
+                    path=self._gui._path
+                else:
+                    path='.'
+            if wildcard is None:
+                wildcard = "Astrocook sessions (*.acs)|*.acs|" \
+                        "FITS files (*.fits)|*.fits|" \
+                        "JSON files (*.json)|*.json|" \
+                        "CSV files (*.csv)|*.csv|" \
+                        "Text files (*.txt)|*.txt"
+            with wx.FileDialog(self._gui._panel_sess, "Open file", path,
+                            wildcard=wildcard,
+                            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) \
+                            as fileDialog:
+                if fileDialog.ShowModal() == wx.ID_CANCEL:
+                    return
+                self._gui._path = fileDialog.GetPath()
+
+        if recentfiles_key not in shelf:
+            shelf[recentfiles_key] = []
+        
+        recentfiles = cast(List[str], shelf[recentfiles_key])
+        if self._gui._path in recentfiles:
+            recentfiles.remove(self._gui._path)
+
+        recentfiles.append(self._gui._path)
+        while len(recentfiles) > 5:
+            recentfiles.pop(0)
+        shelf[recentfiles_key] = recentfiles
+        shelf.sync()
+
         self._gui._panel_sess._open_path = self._gui._path
         if self._gui._path[-4:] == 'json':
             self._gui._panel_sess._open_rec = 'json_load'
@@ -194,6 +209,7 @@ class GUIMenu(object):
             self._gui._panel_sess._open_rec = '_on_open'
             self._gui._panel_sess._on_open(os.path.realpath(self._gui._path))
 
+        self._repopulate()
     """
     def _on_open_session(self, path):
         name = path.split('/')[-1].split('.')[0]
@@ -478,15 +494,28 @@ class GUIMenuFile(GUIMenu):
         self._menu = wx.Menu()
         self._gui._menu_file = self
         self._start_id = start_id
-
+        self._kwargs = kwargs
+        self._repopulate()
+    
+    def _repopulate(self):
+        self._clear(self._menu)
         # Add items to File menu here
-        self._item(self._menu, start_id, None, "Open...\tCtrl+O",
-                   lambda e: self._on_open(e, **kwargs))
+        self._item(self._menu, self._start_id, None, "Open...\tCtrl+O",
+                   lambda e: self._on_open(e, **self._kwargs))
         self._menu.AppendSeparator()
-        self._item(self._menu, start_id+101, None, "Save...\tCtrl+S",
-                   lambda e: self._on_save(e, **kwargs))
+
+        if recentfiles_key in shelf:
+            recentfiles = cast(List[str], shelf[recentfiles_key])
+            if len(recentfiles) > 0:
+                for i, path in enumerate(recentfiles):
+                    self._item(self._menu, self._start_id + 1 + i, None, path,
+                        lambda e: self._on_open(e, force_path=path, **self._kwargs))
+                self._menu.AppendSeparator()
+
+        self._item(self._menu, self._start_id+101, None, "Save...\tCtrl+S",
+                   lambda e: self._on_save(e, **self._kwargs))
         self._menu.AppendSeparator()
-        self._item(self._menu, start_id+400, None, "Quit\tCtrl+Q",
+        self._item(self._menu, self._start_id+400, None, "Quit\tCtrl+Q",
                    self._gui._panel_sess._on_close)
 
     def _on_combine(self, event):

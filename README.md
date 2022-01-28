@@ -27,6 +27,8 @@ Astrocook requires the following packages to run:
 
 For all other information, please refer to the [Astrocook GitHub pages](https://das-oats.github.io/astrocook/).
 
+On Ubuntu:
+sudo apt install python3-wxgtk4.0 python3-astropy python3-tqdm python3-matplotlib python3-lmfit python3-sphinx
 
 ## Credits
 

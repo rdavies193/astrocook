@@ -12,6 +12,9 @@ logging.basicConfig(
     level=logging.INFO,
     format="[%(levelname)s] %(module)s: %(message)s [deprecated]")
 
+import shelve
+shelf = shelve.open("acsettings.dat")
+
 #from .frame import Frame
 #from .spectrum import Spectrum
 
