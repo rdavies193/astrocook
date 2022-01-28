@@ -244,9 +244,9 @@ class GUIGraphDetail(GUIGraphMain):
         size_x = min(wx.DisplaySize()[0]*0.5, wx.DisplaySize()[0]*0.4*cols)
         size_y = min(wx.DisplaySize()[1]*0.9, wx.DisplaySize()[1]*0.3*rows)
         self.SetSize(wx.Size(size_x, size_y))
-        self.SetPosition((min(wx.DisplaySize()[0]*0.98-size_x,
-                              wx.DisplaySize()[0]*0.58),
-                         wx.DisplaySize()[1]*0.02))
+        #self.SetPosition((min(wx.DisplaySize()[0]*0.98-size_x,
+        #                      wx.DisplaySize()[0]*0.58),
+        #                 wx.DisplaySize()[1]*0.02))
 
         # Redshift and wavelengths need to be initialized before the cursor
         # is created in the graph

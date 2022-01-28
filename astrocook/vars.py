@@ -86,12 +86,9 @@ graph_elem="spec,x,y,None,step,-,1,C0,1\n"\
 pars_std_d =  {
     'z': 2.0, 'logN': 13, 'b': 10.0, 'btur': 0.0, 'resol': 35000,
     'z_vary': True, 'logN_vary': True, 'b_vary': True, 'btur_vary': False, 'resol_vary': False,
-    'z_min': 1e-3, 'logN_min': 10, 'b_min': 5.2, 'btur_min': 0.0, 'resol_min': 0,
-#    'z_max': 1e-3, 'logN_max': 18, 'b_max': 100.0, 'btur_max': 100.0, 'resol_max': 1e6,
-    'z_max': 1e-3, 'logN_max': 15, 'b_max': 50.0, 'btur_max': 200.0, 'resol_max': 1e6,
-#    'z_max': 1e-3, 'logN_max': 20, 'b_max': 1000.0, 'btur_max': 200.0, 'resol_max': 1e6,
+    'z_min': 1e-3, 'logN_min': 10, 'b_min': 5.0, 'btur_min': 0.0, 'resol_min': 0,
+    'z_max': 1e-3, 'logN_max': 18, 'b_max': 200.0, 'btur_max': 100.0, 'resol_max': 1e6,
     'z_expr': None, 'logN_expr': None, 'b_expr': None, 'btur_expr': None, 'resol_expr': None}
-
 
 
 # Default values for continuum adjustment parameters
