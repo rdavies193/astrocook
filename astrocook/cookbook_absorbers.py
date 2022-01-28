@@ -335,6 +335,7 @@ class CookbookAbsorbers(object):
 
     def _mods_recreate2(self, only_constr=False, verbose=True):
         """ Create new system models from a system list """
+        print("_mods_recreate2 start")
         spec = self.sess.spec
         spec.t['fit_mask'] = False
         systs = self.sess.systs
@@ -431,6 +432,7 @@ class CookbookAbsorbers(object):
         #profile.disable()
         #ps = pstats.Stats(profile)
         #ps.sort_stats('cumtime').print_stats(20)
+        print("_mods_recreate2 end")
         return 0
 
 
@@ -509,6 +511,7 @@ class CookbookAbsorbers(object):
         return mod
 
     def _syst_fit(self, mod, verbose=True):
+        self._resolve_dirty()
         if self._max_nfev > 0:
             frozen = mod._fit(fit_kws={'max_nfev': self._max_nfev})
             #mod._pars.pretty_print()
@@ -791,7 +794,13 @@ class CookbookAbsorbers(object):
         for k in k_del:
             del systs._constr[k]
 
+    def _resolve_dirty(self):
+        if self.dirty_constr:
+            self._mods_recreate2(only_constr=True)
+            self.dirty_constr = False
+
     def _systs_update(self, mod, incr=True):
+        self._resolve_dirty()
         systs = self.sess.systs
         modw = np.where(mod == systs._mods_t['mod'])[0][0]
         ids = systs._mods_t['id'][modw]
@@ -926,6 +935,8 @@ class CookbookAbsorbers(object):
         @param max_nfev Maximum number of function evaluation
         @return 0
         """
+
+        self._resolve_dirty()
 
         try:
             num = int(num)-1

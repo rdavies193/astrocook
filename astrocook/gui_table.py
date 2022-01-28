@@ -138,6 +138,7 @@ class GUITable(wx.Frame):
             tab._panel = wx.Panel(tab)
             tab._tab = gridlib.Grid(tab._panel)
             tab._tab.CreateGrid(0, 0)
+            tab._tab.DisableDragRowSize()
             tab.SetPosition((0, wx.DisplaySize()[1]*0.5))
 
         coln = len(tab._data.t.colnames)
@@ -627,7 +628,7 @@ class GUITableSystList(GUITable):
         self._tab.ForceRefresh()
         systs = self._gui._sess_sel.systs
         systs._constrain(self._links_d)
-        self._gui._sess_sel.cb._mods_recreate2(only_constr=True)
+        self._gui._sess_sel.cb.dirty_constr = True
         self._text_colours()
 
 
@@ -745,6 +746,7 @@ class GUITableSystList(GUITable):
     def _on_fit(self, event):
         row = self._gui._tab_popup._event.GetRow()
         sess = self._gui._sess_sel
+        sess.cb._resolve_dirty()
         """
         sess.json += self._gui._json_update("_tab_systs", "_data_fit",
                                             {"row": row})
