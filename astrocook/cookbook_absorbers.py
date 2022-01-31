@@ -35,6 +35,7 @@ class CookbookAbsorbers(object):
         self._dlogN_thres = np.inf
         self._max_nfev = max_nfev_def
         self._sel_fit = False
+        self.dirty_constr = False
 
     def _lines_cands_find(self, series, z_start, z_end, dz):
         return self.sess.lines._cands_find(series, z_start, z_end, dz)
@@ -1363,6 +1364,8 @@ class CookbookAbsorbers(object):
         @param max_nfev Maximum number of function evaluation
         @return 0
         """
+
+        self._resolve_dirty()
 
         try:
             #series = series.replace(';',',')

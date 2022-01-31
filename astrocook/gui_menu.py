@@ -504,13 +504,14 @@ class GUIMenuFile(GUIMenu):
                    lambda e: self._on_open(e, **self._kwargs))
         self._menu.AppendSeparator()
 
-        if recentfiles_key in shelf:
+        """if recentfiles_key in shelf:
             recentfiles = cast(List[str], shelf[recentfiles_key])
             if len(recentfiles) > 0:
                 for i, path in enumerate(recentfiles):
-                    self._item(self._menu, self._start_id + 1 + i, None, path,
-                        lambda e: self._on_open(e, force_path=path, **self._kwargs))
-                self._menu.AppendSeparator()
+                    force_path = path
+                    self._item(self._menu, self._start_id + i + 1, None, path,
+                        lambda e: print(i, force_path))
+                self._menu.AppendSeparator()"""
 
         self._item(self._menu, self._start_id+101, None, "Save...\tCtrl+S",
                    lambda e: self._on_save(e, **self._kwargs))
