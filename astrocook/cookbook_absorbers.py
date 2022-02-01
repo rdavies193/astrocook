@@ -336,7 +336,7 @@ class CookbookAbsorbers(object):
 
     def _mods_recreate2(self, only_constr=False, verbose=True):
         """ Create new system models from a system list """
-        print("_mods_recreate2 start")
+        # print("_mods_recreate2 start")
         spec = self.sess.spec
         spec.t['fit_mask'] = False
         systs = self.sess.systs
@@ -433,7 +433,7 @@ class CookbookAbsorbers(object):
         #profile.disable()
         #ps = pstats.Stats(profile)
         #ps.sort_stats('cumtime').print_stats(20)
-        print("_mods_recreate2 end")
+        # print("_mods_recreate2 end")
         return 0
 
 

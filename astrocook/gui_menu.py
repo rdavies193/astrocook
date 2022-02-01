@@ -11,6 +11,7 @@ import datetime
 import logging
 import os
 import wx
+import shelve
 
 recentfiles_key = "recentfiles"
 
@@ -188,18 +189,18 @@ class GUIMenu(object):
                     return
                 self._gui._path = fileDialog.GetPath()
 
-        if recentfiles_key not in shelf:
-            shelf[recentfiles_key] = []
+        with shelve.open(acsettings_filename) as shelf:
+            if recentfiles_key not in shelf:
+                shelf[recentfiles_key] = []
         
-        recentfiles = cast(List[str], shelf[recentfiles_key])
-        if self._gui._path in recentfiles:
-            recentfiles.remove(self._gui._path)
+            recentfiles = cast(List[str], shelf[recentfiles_key])
+            if self._gui._path in recentfiles:
+                recentfiles.remove(self._gui._path)
 
-        recentfiles.append(self._gui._path)
-        while len(recentfiles) > 5:
-            recentfiles.pop(0)
-        shelf[recentfiles_key] = recentfiles
-        shelf.sync()
+            recentfiles.append(self._gui._path)
+            while len(recentfiles) > 5:
+                recentfiles.pop(0)
+            shelf[recentfiles_key] = recentfiles
 
         self._gui._panel_sess._open_path = self._gui._path
         if self._gui._path[-4:] == 'json':
