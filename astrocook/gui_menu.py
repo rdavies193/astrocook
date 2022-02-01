@@ -197,9 +197,9 @@ class GUIMenu(object):
             if self._gui._path in recentfiles:
                 recentfiles.remove(self._gui._path)
 
-            recentfiles.append(self._gui._path)
+            recentfiles.insert(0, self._gui._path)
             while len(recentfiles) > 5:
-                recentfiles.pop(0)
+                recentfiles.pop()
             shelf[recentfiles_key] = recentfiles
 
         self._gui._panel_sess._open_path = self._gui._path
@@ -505,15 +505,16 @@ class GUIMenuFile(GUIMenu):
                    lambda e: self._on_open(e, **self._kwargs))
         self._menu.AppendSeparator()
 
-        """with shelve.open(acsettings_filename) as shelf:
+        with shelve.open(acsettings_filename) as shelf:
             if recentfiles_key in shelf:
                 recentfiles = cast(List[str], shelf[recentfiles_key])
                 if len(recentfiles) > 0:
                     for i, path in enumerate(recentfiles):
-                        force_path = path
-                        self._item(self._menu, self._start_id + i + 1, None, path,
-                            lambda e: print(i, force_path))
-                    self._menu.AppendSeparator()"""
+                        def on_recent_file(event):
+                            i = event.GetId() - self._start_id - 1
+                            self._on_open(event, force_path = recentfiles[i])
+                        self._item(self._menu, self._start_id + i + 1, None, path, on_recent_file)
+                    self._menu.AppendSeparator()
 
         self._item(self._menu, self._start_id+101, None, "Save...\tCtrl+S",
                    lambda e: self._on_save(e, **self._kwargs))
