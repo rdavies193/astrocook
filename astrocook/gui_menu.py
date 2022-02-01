@@ -530,7 +530,7 @@ class GUIMenuFile(GUIMenu):
         """ Behaviour for Session > Save """
 
         if path is None:
-            if hasattr(self._gui, '_path'):
+            if self._gui._path is not None:
                 path=os.path.basename(self._gui._path)
             else:
                 path='.'

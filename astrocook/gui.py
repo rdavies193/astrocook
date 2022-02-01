@@ -1,3 +1,4 @@
+import time
 from . import * #version
 from .functions import expr_eval
 from .gui_graph import *
@@ -53,6 +54,10 @@ class GUI(object):
         self._id_zoom = 9
         self._data_lim = None
         self._tag = ""
+        self._path = None
+
+        self._last_autosave = time.time()
+
         GUIGraphMain(self)
         GUITableSpectrum(self)
         GUITableLineList(self)
@@ -337,6 +342,7 @@ class GUI(object):
         if hasattr(self, '_graph_hist'):
             self._graph_hist._refresh(self._sess_items)
 
+        self.autosave()
 
     def _refresh_graph_det(self, init_cursor=False, autolim=True):
         graph = self._graph_det._graph
@@ -366,6 +372,22 @@ class GUI(object):
             else:
                 self._graph_det._refresh(self._sess_items,
                                          init_cursor=init_cursor)
+
+    def autosave(self):
+        curr_time = time.time()
+        # Time in seconds between autosaves
+        freq = 60
+        if curr_time < self._last_autosave + freq:
+            return
+        self._last_autosave = curr_time
+
+        path = self._path
+        if path is not None:
+            path = f"/tmp/backup_{os.path.basename(path)}"
+        else:
+            path = "/tmp/backup_acautosave.acs"
+        
+        self._sess_sel.save(path)
 
 class GUIControlList(wx.ListCtrl, listmix.TextEditMixin):
     """ Class for editable control lists. """

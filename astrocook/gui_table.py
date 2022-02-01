@@ -631,6 +631,7 @@ class GUITableSystList(GUITable):
         systs._constrain(self._links_d)
         self._gui._sess_sel.cb.dirty_constr = True
         self._text_colours()
+        self._gui.autosave()
 
 
     def _data_top_label_right_click(self, col):
