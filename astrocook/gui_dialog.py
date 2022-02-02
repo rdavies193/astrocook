@@ -3,6 +3,7 @@ from .message import *
 from .vars import graph_elem, hwin_def
 from collections import OrderedDict
 from copy import deepcopy as dc
+import os
 import inspect
 import json
 import numpy as np
@@ -472,7 +473,7 @@ class GUIDialogMiniLog(GUIDialogMini):
     def _on_save(self, e=None, path=None):
         if path is None:
             if self._gui._path is not None:
-                path=os.path.basename(self._gui._path)
+                path=os.path.dirname(self._gui._path)
             else:
                 path='.'
         name = self._gui._sess_sel.name

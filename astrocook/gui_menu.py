@@ -529,9 +529,13 @@ class GUIMenuFile(GUIMenu):
     def _on_save(self, event, path=None):
         """ Behaviour for Session > Save """
 
+        if self._gui._sess_sel is None:
+            wx.MessageBox("Nothing to save", "Nothing to save", wx.OK_DEFAULT, self._gui._panel_sess)
+            return
+
         if path is None:
             if self._gui._path is not None:
-                path=os.path.basename(self._gui._path)
+                path=os.path.dirname(self._gui._path)
             else:
                 path='.'
         name = self._gui._sess_sel.name
