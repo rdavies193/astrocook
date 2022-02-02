@@ -471,7 +471,7 @@ class GUIDialogMiniLog(GUIDialogMini):
 
     def _on_save(self, e=None, path=None):
         if path is None:
-            if hasattr(self._gui, '_path'):
+            if self._gui._path is not None:
                 path=os.path.basename(self._gui._path)
             else:
                 path='.'

@@ -171,7 +171,7 @@ class GUIMenu(object):
             self._gui._path = force_path
         else:
             if path is None:
-                if hasattr(self._gui, '_path'):
+                if self._gui._path is not None:
                     path=self._gui._path
                 else:
                     path='.'
