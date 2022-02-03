@@ -3,7 +3,6 @@ from copy import deepcopy as dc
 import json
 import numpy as np
 import pathlib
-import wx
 
 class GUILog(object):
 
