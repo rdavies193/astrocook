@@ -7,15 +7,10 @@ from copy import deepcopy as dc
 import logging
 import matplotlib
 from matplotlib import pyplot as plt
-from matplotlib.backends.backend_wx import NavigationToolbar2Wx
-from matplotlib.backends.backend_agg import FigureCanvasAgg
-from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg, \
-    NavigationToolbar2WxAgg, _convert_agg_to_wx_bitmap
 from matplotlib.figure import Figure
 import matplotlib.transforms as transforms
 from matplotlib.widgets import Cursor
 import numpy as np
-import wx
 
 class Graph(object):
 
@@ -45,6 +40,9 @@ class Graph(object):
     def _init_canvas(self):
         #self._c = 0
         #self._fig.tight_layout()#rect=[-0.03, 0.02, 1.03, 1])
+        from matplotlib.backends.backend_wx import NavigationToolbar2Wx
+        from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg
+        
         self._canvas = FigureCanvasWxAgg(self._panel, -1, self._fig)
         self._toolbar = NavigationToolbar2Wx(self._canvas)
         #self._cursor = Cursor(self._ax, useblit=True, color='red',
